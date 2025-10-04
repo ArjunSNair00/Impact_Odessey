@@ -9,23 +9,16 @@ function App() {
     <div style={{ width: "100vw", height: "100vh", margin: 0, padding: 0 }}>
       <Canvas
         camera={{
-          position: [0, 0, 300],
-          fov: 60,
-          near: 1,
+          position: [0, 0, 2],
+          fov: 45,
+          near: 0.01,
           far: 10000,
         }}
-        gl={{
-          antialias: true,
-          powerPreference: "high-performance",
-          alpha: false,
-          stencil: false,
-          depth: true,
-        }}
-        performance={{ min: 0.5 }}
+        gl={{ antialias: false, powerPreference: "high-performance" }}
       >
         <ambientLight intensity={1.0} />
         <directionalLight
-          position={[-200, 50, -400]}
+          position={[-200, 50, 0]}
           intensity={2.0}
           color="#ffffff"
           castShadow
@@ -36,7 +29,7 @@ function App() {
           enablePan
           enableZoom
           minDistance={0}
-          maxDistance={1500}
+          maxDistance={800}
           enableDamping={false}
           rotateSpeed={0.5}
         />

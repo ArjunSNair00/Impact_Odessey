@@ -11,7 +11,7 @@ import earthNight from "./assets/Earth/earth_nightlights_10K.png";
 export default function Earth({
   radius = 0.5,
   rotationSpeed = 0.2,
-  bumpScale = 0.01,
+  bumpScale = 0.05,
 }) {
   const earthRef = useRef();
   const { camera } = useThree();
@@ -68,7 +68,7 @@ export default function Earth({
       optimizeTexture(colorMapOriginal, 2048),
       optimizeTexture(oceanMapOriginal, 1024),
       optimizeTexture(specularMapOriginal, 1024),
-      optimizeTexture(bumpMapOriginal, 500),
+      optimizeTexture(bumpMapOriginal, 1024),
       optimizeTexture(nightMapOriginal, 2048), // Night lights need good resolution
     ];
   }, [
@@ -132,34 +132,15 @@ export default function Earth({
         lightDirection: { value: new THREE.Vector3(5, 0, 2).normalize() },
       },
       vertexShader: `
-        uniform sampler2D bumpMap;
-        uniform float bumpScale;
-
         varying vec2 vUv;
         varying vec3 vNormal;
-        varying vec3 vTangent;
-        varying vec3 vBitangent;
         varying vec3 vWorldPosition;
         
         void main() {
           vUv = uv;
-          
-          // Calculate tangent space for normal mapping
-          vec3 normal = normalize(normalMatrix * normal);
-          vec3 tangent = normalize(normalMatrix * normalize(cross(normal, vec3(0.0, 1.0, 0.0))));
-          vec3 bitangent = normalize(cross(normal, tangent));
-          
-          vNormal = normal;
-          vTangent = tangent;
-          vBitangent = bitangent;
-
-          // Apply bump mapping displacement
-          float height = texture2D(bumpMap, vUv).r;
-          vec3 transformed = position + normalize(position) * height * bumpScale;
-          
-          vec4 worldPosition = modelMatrix * vec4(transformed, 1.0);
+          vNormal = normalize(normalMatrix * normal);
+          vec4 worldPosition = modelMatrix * vec4(position, 1.0);
           vWorldPosition = worldPosition.xyz;
-          
           gl_Position = projectionMatrix * viewMatrix * worldPosition;
         }
       `,
@@ -168,43 +149,25 @@ export default function Earth({
         uniform sampler2D nightTexture;
         uniform sampler2D specularMap;
         uniform sampler2D oceanMap;
-        uniform sampler2D bumpMap;
         uniform vec3 lightDirection;
-        uniform float bumpScale;
         
         varying vec2 vUv;
         varying vec3 vNormal;
-        varying vec3 vTangent;
-        varying vec3 vBitangent;
         varying vec3 vWorldPosition;
 
         void main() {
-          // Create TBN matrix for normal mapping
-          mat3 TBN = mat3(normalize(vTangent), normalize(vBitangent), normalize(vNormal));
-
-          // Sample bump map and create normal offset
-          vec2 dHdxy = vec2(
-            texture2D(bumpMap, vUv + vec2(0.001, 0.0)).r - texture2D(bumpMap, vUv - vec2(0.001, 0.0)).r,
-            texture2D(bumpMap, vUv + vec2(0.0, 0.001)).r - texture2D(bumpMap, vUv - vec2(0.0, 0.001)).r
-          ) * bumpScale;
-          
-          vec3 normal = normalize(vNormal + TBN * vec3(dHdxy.x, dHdxy.y, 0.0));
+          vec3 normal = normalize(vNormal);
           float lightIntensity = max(dot(normal, normalize(lightDirection)), 0.0);
           
           // Sample textures
           vec3 dayColor = texture2D(dayTexture, vUv).rgb;
-          vec3 nightColor = texture2D(nightTexture, vUv).rgb;
+          vec3 nightColor = texture2D(nightTexture, vUv).rgb * 2.5; // Brighten night lights
           vec3 oceanMask = texture2D(oceanMap, vUv).rgb;
           float specular = texture2D(specularMap, vUv).r;
           
-          // Create darker night base with bright city lights
-          vec3 darkNight = vec3(0.02, 0.02, 0.05); // Very dark blue-black base color
-          vec3 cityLights = nightColor * vec3(3.0, 2.5, 2.0); // Brighter, slightly warm city lights
-          vec3 nightFinal = darkNight + cityLights;
-
           // Smooth transition between day and night
-          float transition = smoothstep(-0.1, 0.3, lightIntensity);
-          vec3 color = mix(nightFinal, dayColor, transition);
+          float transition = smoothstep(-0.2, 0.3, lightIntensity);
+          vec3 color = mix(nightColor, dayColor, transition);
           
           // Add specular highlights on water
           float oceanSpecular = specular * pow(max(dot(normal, normalize(lightDirection)), 0.0), 8.0);

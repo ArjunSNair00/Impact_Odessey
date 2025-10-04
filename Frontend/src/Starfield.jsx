@@ -3,7 +3,7 @@ import { Points, PointMaterial } from "@react-three/drei";
 import Earth from "./Earth";
 
 const Starfield = ({
-  count = 3000, // Significantly reduced for performance
+  count = 5000, // Significantly reduced for performance
   spread = 1500,
   minSize = 0.1,
   maxSize = 0.3,
