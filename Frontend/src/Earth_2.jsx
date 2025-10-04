@@ -13,7 +13,7 @@ export default function Earth({
   radius = 50,
   bumpScale = 0.5,
   rotationSpeed = 0.001,
-  axialTilt = 23.5, // degrees
+  axialTilt = 23.5,
 }) {
   const rotationRef = useRef({ x: axialTilt * (Math.PI / 180), y: 0 });
   const earthRef = useRef();
@@ -22,26 +22,19 @@ export default function Earth({
 
   const [colorMap, nightMap, heightMap, specularMap, oceanMap] = useLoader(
     TextureLoader,
-    [earthColor, earthNight, earthHeight, earthSpecular, earthOcean],
-    (loader) => {
-      loader.generateMipmaps = true;
-      loader.minFilter = THREE.LinearMipmapLinearFilter;
-      loader.magFilter = THREE.LinearFilter;
-      loader.anisotropy = 4; // Reduced for performance
-    }
+    [earthColor, earthNight, earthHeight, earthSpecular, earthOcean]
   );
 
-  if (!colorMap || !nightMap || !heightMap || !specularMap || !oceanMap) {
-    console.error("Failed to load one or more textures");
-    return null;
-  }
-
-  // Configure textures and handle cleanup
+  // Configure textures with optimizations
   useEffect(() => {
     const textures = [colorMap, nightMap, heightMap, specularMap, oceanMap];
     textures.forEach((texture) => {
       if (texture) {
         texture.encoding = THREE.sRGBEncoding;
+        texture.anisotropy = 4;
+        texture.minFilter = THREE.LinearMipmapLinearFilter;
+        texture.magFilter = THREE.LinearFilter;
+        texture.generateMipmaps = true;
         texture.needsUpdate = true;
       }
     });
@@ -67,7 +60,6 @@ export default function Earth({
 
   return (
     <>
-      {/* Test sphere with basic material */}
       <mesh
         ref={earthRef}
         frustumCulled={false}
@@ -75,8 +67,6 @@ export default function Earth({
         receiveShadow
         position={[0, 0, 0]}
       >
-        <meshPhongMaterial color="#2233ff" />
-        >
         <sphereGeometry args={[radius, 64, 64]} />
         <shaderMaterial
           uniforms={{
@@ -87,6 +77,7 @@ export default function Earth({
             bumpMap: { value: heightMap },
             bumpScale: { value: bumpScale },
             lightDirection: { value: lightDir },
+            radius: { value: radius },
           }}
           vertexShader={`
             varying vec3 vNormal;
@@ -94,7 +85,7 @@ export default function Earth({
             void main() {
               vNormal = normal;
               vPosition = (modelMatrix * vec4(position, 1.0)).xyz;
-              gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
+              gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
             }
           `}
           fragmentShader={`
@@ -102,23 +93,27 @@ export default function Earth({
             uniform sampler2D nightTexture;
             uniform sampler2D specularMap;
             uniform vec3 lightDirection;
+            uniform float radius;
             varying vec3 vNormal;
             varying vec3 vPosition;
+            
             void main() {
-              // Convert normal to world space for consistent lighting
               vec3 worldNormal = normalize(mat3(modelMatrix) * normalize(vNormal));
-              float lightIntensity = max(dot(worldNormal, normalize(lightDirection)), 0.2);
-              lightIntensity = smoothstep(0.2, 1.0, lightIntensity);
+              float lightIntensity = max(dot(worldNormal, normalize(lightDirection)), 0.0);
+              
               float u = 1.0 - (atan(vPosition.z, vPosition.x) / (2.0 * 3.14159265) + 0.5);
-              float v = 0.5 - asin(vPosition.y / ${radius.toFixed(
-                1
-              )}) / 3.14159265;
+              float v = 0.5 - asin(vPosition.y / radius) / 3.14159265;
               vec2 uv = vec2(u, v);
+              
               vec3 dayColor = texture2D(dayTexture, uv).rgb;
               vec3 nightColor = texture2D(nightTexture, uv).rgb;
-              vec3 color = mix(nightColor, dayColor, lightIntensity);
-              vec3 spec = texture2D(specularMap, uv).rgb * lightIntensity;
+              
+              float transition = smoothstep(0.0, 0.3, lightIntensity);
+              vec3 color = mix(nightColor, dayColor, transition);
+              
+              vec3 spec = texture2D(specularMap, uv).rgb * pow(lightIntensity, 3.0);
               color += spec * 0.2;
+              
               gl_FragColor = vec4(color, 1.0);
             }
           `}
@@ -149,9 +144,9 @@ export default function Earth({
             varying float intensity;
             void main() {
               vec3 vNormal = normalize(normalMatrix * normal);
-              vec3 viewDir = normalize((modelViewMatrix * vec4(position,1.0)).xyz);
+              vec3 viewDir = normalize((modelViewMatrix * vec4(position, 1.0)).xyz);
               intensity = pow(coef - dot(vNormal, viewDir), power);
-              gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
+              gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
             }
           `}
           fragmentShader={`

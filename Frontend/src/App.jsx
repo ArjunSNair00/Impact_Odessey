@@ -2,8 +2,7 @@ import React from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import Starfield from "./Starfield";
-import Earth from "./Earth_test";
-import Sun from "./Sun";
+import Earth from "./Earth";
 
 function App() {
   return (
@@ -31,7 +30,6 @@ function App() {
           color="#ffffff"
           castShadow
         />
-        <Sun />
         <Earth />
         <Starfield />
         <OrbitControls
