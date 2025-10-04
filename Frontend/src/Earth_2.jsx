@@ -31,6 +31,11 @@ export default function Earth({
     }
   );
 
+  if (!colorMap || !nightMap || !heightMap || !specularMap || !oceanMap) {
+    console.error("Failed to load one or more textures");
+    return null;
+  }
+
   // Configure textures and handle cleanup
   useEffect(() => {
     const textures = [colorMap, nightMap, heightMap, specularMap, oceanMap];
@@ -57,11 +62,21 @@ export default function Earth({
 
   // Find the Sun's position for lighting
   const sunPosition = new THREE.Vector3(-200, 50, -400);
-  const lightDir = sunPosition.clone().normalize();
+  const earthPosition = new THREE.Vector3(0, 0, 0);
+  const lightDir = sunPosition.clone().sub(earthPosition).normalize();
 
   return (
     <>
-      <mesh ref={earthRef} frustumCulled={false}>
+      {/* Test sphere with basic material */}
+      <mesh
+        ref={earthRef}
+        frustumCulled={false}
+        castShadow
+        receiveShadow
+        position={[0, 0, 0]}
+      >
+        <meshPhongMaterial color="#2233ff" />
+        >
         <sphereGeometry args={[radius, 64, 64]} />
         <shaderMaterial
           uniforms={{
@@ -92,7 +107,8 @@ export default function Earth({
             void main() {
               // Convert normal to world space for consistent lighting
               vec3 worldNormal = normalize(mat3(modelMatrix) * normalize(vNormal));
-              float lightIntensity = max(dot(worldNormal, normalize(lightDirection)), 0.0);
+              float lightIntensity = max(dot(worldNormal, normalize(lightDirection)), 0.2);
+              lightIntensity = smoothstep(0.2, 1.0, lightIntensity);
               float u = 1.0 - (atan(vPosition.z, vPosition.x) / (2.0 * 3.14159265) + 0.5);
               float v = 0.5 - asin(vPosition.y / ${radius.toFixed(
                 1

@@ -2,7 +2,7 @@ import React from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import Starfield from "./Starfield";
-import Earth from "./Earth_2";
+import Earth from "./Earth_test";
 import Sun from "./Sun";
 
 function App() {
@@ -10,9 +10,9 @@ function App() {
     <div style={{ width: "100vw", height: "100vh", margin: 0, padding: 0 }}>
       <Canvas
         camera={{
-          position: [0, 30, 80],
+          position: [0, 0, 300],
           fov: 60,
-          near: 0.1,
+          near: 1,
           far: 10000,
         }}
         gl={{
@@ -24,7 +24,13 @@ function App() {
         }}
         performance={{ min: 0.5 }}
       >
-        <ambientLight intensity={0.15} />
+        <ambientLight intensity={1.0} />
+        <directionalLight
+          position={[-200, 50, -400]}
+          intensity={2.0}
+          color="#ffffff"
+          castShadow
+        />
         <Sun />
         <Earth />
         <Starfield />
