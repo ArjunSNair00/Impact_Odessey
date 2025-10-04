@@ -1,11 +1,13 @@
-import React from "react";
+import React, { useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import Starfield from "./Starfield";
 import Earth from "./Earth";
 import Nav from "./components/Nav";
+import Hamburger from "./Hamburger";
 
 function App() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   return (
     <div
       style={{
@@ -28,29 +30,27 @@ function App() {
         </div>
         <Nav />
       </div>
-      <div className="flex top-10 left-30 items-center h-screen z-50 absolute">
-        <button className="bg-blue-950 p-5 text-3xl rounded-xl mb-30 hover:bg-blue-800 transition-all select-none">
-          START MISSION
-        </button>
+      {!isMenuOpen && (
+        <div className="absolute flex w-70 left-30 rounded-[6px] top-50 p-4 bg-zinc-900 transition-opacity duration-300">
+          Impactor2k25 is a NASA Space Apps Challenge project that features an
+          interactive simulation and visualization platform. We transform
+          complex NASA/USGS data into accessible 2D/3D models to assess the risk
+          of the hypothetical near-Earth asteroid, Impactor-2025. The tool
+          allows users to run "what-if" scenarios, calculate damage like
+          fireball radius and tsunami size, and evaluate mitigation strategies
+          such as trajectory deflection, empowering informed decision-making for
+          planetary defense.
+        </div>
+      )}
+      <div className="absolute bottom-5 left-5 z-50">
+        <img
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          className="h-16 w-16 cursor-pointer hover:scale-110 transition-all duration-200"
+          src="/icons/hamburger.png"
+          alt="menu"
+        ></img>
       </div>
-      <div className="flex absolute h-screen bottom-20 items-end justify-evenly w-screen">
-        <div className="flex flex-col text-center items-center bg-zinc-600 font-bold h-40 w-36 justify-center pb-5 rounded-xl z-10 pop hover:cursor-pointer select-none hover:bg-zinc-700 hover:scale-110 transition-all duration-200">
-          <img src="/icons/analysis.png" className="h-20 w-20 mb-4"></img>
-          REAL TIME DATA
-        </div>
-        <div className="flex flex-col text-center items-center bg-zinc-600 font-bold h-40 w-36 justify-center pb-5 rounded-xl z-10 pop hover:cursor-pointer select-none">
-          <img src="/icons/comet1.png" className="h-20 w-20 mb-4"></img>
-          IMPACT PREDICTIONS
-        </div>
-        <div className="flex flex-col text-center items-center bg-zinc-600 font-bold h-40 w-36 justify-center pb-5 rounded-xl z-10 pop hover:cursor-pointer select-none">
-          <img src="/icons/simulation.png" className="h-20 w-20 mb-4"></img>
-          INTERACTIVE SIMULATIONS
-        </div>
-        <div className="flex flex-col text-center items-center bg-zinc-600 font-bold h-40 w-36 justify-center pb-5 rounded-xl z-10 pop hover:cursor-pointer select-none">
-          <img src="/icons/coding.png" className="h-20 w-20 mb-4"></img>
-          LEARN MORE
-        </div>
-      </div>
+      {isMenuOpen && <Hamburger onClose={() => setIsMenuOpen(false)} />}
 
       <Canvas
         camera={{
