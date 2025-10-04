@@ -15,3 +15,9 @@ body {
   margin: 0;
   padding: 0;
 }
+
+@layer utilities{
+  .pop{
+    @apply hover:cursor-pointer hover:bg-zinc-700 hover:scale-110 transition-all duration-200
+  }
+}
