@@ -55,15 +55,29 @@ export default function Earth({
     }
   });
 
-  // Find the Sun's position for lighting
+  // Calculate sun direction in world space
   const sunPosition = new THREE.Vector3(-200, 50, -400);
-  const lightDir = sunPosition.clone().normalize();
+  const earthPosition = new THREE.Vector3(0, 0, 0);
+  const lightDir = sunPosition.clone().sub(earthPosition).normalize();
+
+  // Update light direction when sun position changes
+  useEffect(() => {
+    if (earthRef.current) {
+      const material = earthRef.current.material;
+      if (material && material.uniforms) {
+        material.uniforms.lightDirection.value = lightDir;
+        material.uniformsNeedUpdate = true;
+      }
+    }
+  }, [lightDir]);
 
   return (
     <>
-      <mesh ref={earthRef} frustumCulled={false}>
+      <mesh ref={earthRef} frustumCulled={false} position={[0, 0, 0]}>
         <sphereGeometry args={[radius, 64, 64]} />
         <shaderMaterial
+          transparent={false}
+          side={THREE.FrontSide}
           uniforms={{
             dayTexture: { value: colorMap },
             nightTexture: { value: nightMap },
@@ -92,7 +106,7 @@ export default function Earth({
             void main() {
               // Convert normal to world space for consistent lighting
               vec3 worldNormal = normalize(mat3(modelMatrix) * normalize(vNormal));
-              float lightIntensity = max(dot(worldNormal, normalize(lightDirection)), 0.0);
+              float lightIntensity = max(dot(worldNormal, normalize(lightDirection)), 0.1);
               float u = 1.0 - (atan(vPosition.z, vPosition.x) / (2.0 * 3.14159265) + 0.5);
               float v = 0.5 - asin(vPosition.y / ${radius.toFixed(
                 1

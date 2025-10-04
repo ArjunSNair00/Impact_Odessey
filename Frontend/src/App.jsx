@@ -10,8 +10,8 @@ function App() {
     <div style={{ width: "100vw", height: "100vh", margin: 0, padding: 0 }}>
       <Canvas
         camera={{
-          position: [0, 30, 80],
-          fov: 60,
+          position: [0, 100, 300],
+          fov: 45,
           near: 0.1,
           far: 10000,
         }}
@@ -24,7 +24,7 @@ function App() {
         }}
         performance={{ min: 0.5 }}
       >
-        <ambientLight intensity={0.15} />
+        <ambientLight intensity={0.3} />
         <Sun />
         <Earth />
         <Starfield />

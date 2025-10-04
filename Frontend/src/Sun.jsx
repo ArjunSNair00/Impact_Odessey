@@ -42,7 +42,6 @@ export default function Sun({
         <shaderMaterial
           transparent
           uniforms={{
-            time: { value: 0 },
             color: { value: new THREE.Color(glowColor) },
           }}
           vertexShader={`
