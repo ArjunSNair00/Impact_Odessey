@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: JetBrains;
+  src: url("/fonts/JetBrainsMonoNerdFont-Regular.ttf");
+}
+
+:root {
+  --font-jb: JetBrains, "sans-serif";
+}
+
+body {
+  background: black;
+  color: white;
+  margin: 0;
+  padding: 0;
+}
