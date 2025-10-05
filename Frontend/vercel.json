@@ -1,4 +1,0 @@
-{
-  "buildCommand": "npm ci && npm install rollup --save-dev && npm run build",
-  "installCommand": "npm install"
-}
