@@ -89,40 +89,66 @@ function DataAnalysis() {
                 </p>
                 <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-black text-white text-sm rounded-md absolute z-50 p-2 pointer-events-none bottom-full left-0 w-64">
                   The average distance between the asteroid and the Sun, half of
-                  the major axis of its elliptical orbit.
+                  the major axis of its elliptical orbit. Measured in
+                  Astronomical Units (AU).
                 </div>
               </div>
-              <div>
+
+              <div className="group relative cursor-help">
                 <p className="text-gray-400">Eccentricity</p>
                 <p className="text-xl">
                   {selectedAsteroid.orbit?.eccentricity?.toFixed(3) || "N/A"}
                 </p>
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-black text-white text-sm rounded-md absolute z-50 p-2 pointer-events-none bottom-full left-0 w-64">
+                  A measure of how much the orbit deviates from circular (0 =
+                  perfectly circular, 1 = highly elongated). Higher values
+                  indicate more elliptical orbits.
+                </div>
               </div>
-              <div>
+              <div className="group relative cursor-help">
                 <p className="text-gray-400">Inclination</p>
                 <p className="text-xl">
                   {selectedAsteroid.orbit?.inclination?.toFixed(2) || "N/A"}°
                 </p>
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-black text-white text-sm rounded-md absolute z-50 p-2 pointer-events-none bottom-full left-0 w-64">
+                  The tilt of the asteroid's orbit relative to Earth's orbital
+                  plane (the ecliptic). Higher angles indicate more inclined
+                  orbits.
+                </div>
               </div>
-              <div>
+              <div className="group relative cursor-help">
                 <p className="text-gray-400">Ascending Node</p>
                 <p className="text-xl">
                   {selectedAsteroid.orbit?.ascending_node?.toFixed(2) || "N/A"}°
                 </p>
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-black text-white text-sm rounded-md absolute z-50 p-2 pointer-events-none bottom-full left-0 w-64">
+                  The angle where the asteroid's orbit crosses upward through
+                  Earth's orbital plane, measured from the First Point of Aries.
+                </div>
               </div>
-              <div>
+              <div className="group relative cursor-help">
                 <p className="text-gray-400">Perihelion Argument</p>
                 <p className="text-xl">
                   {selectedAsteroid.orbit?.perihelion_argument?.toFixed(2) ||
                     "N/A"}
                   °
                 </p>
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-black text-white text-sm rounded-md absolute z-50 p-2 pointer-events-none bottom-full left-0 w-64">
+                  The angle between the ascending node and the point of closest
+                  approach to the Sun (perihelion), measured in the orbital
+                  plane.
+                </div>
               </div>
-              <div>
+              <div className="group relative cursor-help">
                 <p className="text-gray-400">Mean Anomaly</p>
                 <p className="text-xl">
                   {selectedAsteroid.orbit?.mean_anomaly?.toFixed(2) || "N/A"}°
                 </p>
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-black text-white text-sm rounded-md absolute z-50 p-2 pointer-events-none bottom-full left-0 w-64">
+                  A parameter representing the asteroid's position in its orbit,
+                  measured as an angle from perihelion. Used to calculate the
+                  true position.
+                </div>
               </div>
 
               {/* Additional Orbital Elements */}
@@ -248,7 +274,7 @@ function DataAnalysis() {
               </div>
 
               {/* Orbit Analysis */}
-              <div>
+              <div className="group relative cursor-help">
                 <p className="text-gray-400">Minimum Orbit Intersection</p>
                 <p className="text-xl">
                   {selectedAsteroid.orbit?.minimum_orbit_intersection?.toFixed(
@@ -256,6 +282,11 @@ function DataAnalysis() {
                   ) || "N/A"}{" "}
                   AU
                 </p>
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-black text-white text-sm rounded-md absolute z-50 p-2 pointer-events-none bottom-full left-0 w-64">
+                  The closest distance between the asteroid's orbit and Earth's
+                  orbit. A key measure for assessing potential future collision
+                  risks.
+                </div>
               </div>
               <div>
                 <p className="text-gray-400">Jupiter Tisserand Invariant</p>

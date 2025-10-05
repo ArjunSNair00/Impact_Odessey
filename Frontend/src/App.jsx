@@ -58,13 +58,29 @@ function App() {
     fetchAsteroids();
   }, []); // Empty dependency array means this runs once on mount
 
-  const fetchAsteroids = async () => {
+  const fetchAsteroids = async (retryCount = 0) => {
     setLoading(true);
     setError(null); // Clear any previous errors
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 second timeout
+
+      // Try to get from cache first
+      const cachedData = localStorage.getItem("asteroidCache");
+      const cacheTimestamp = localStorage.getItem("asteroidCacheTimestamp");
+
+      if (cachedData && cacheTimestamp) {
+        const age = Date.now() - parseInt(cacheTimestamp);
+        if (age < 5 * 60 * 1000) {
+          // Cache valid for 5 minutes
+          setAsteroids(JSON.parse(cachedData));
+          setLoading(false);
+          // Fetch in background to update cache
+          fetchAsteroids(retryCount).catch(console.error);
+          return;
+        }
+      }
 
       const response = await fetch(
         "http://localhost:5000/api/asteroids?details=true",
@@ -80,6 +96,12 @@ function App() {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
+        if (response.status === 503 && retryCount < 3) {
+          // Exponential backoff
+          const delay = Math.pow(2, retryCount) * 1000;
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          return fetchAsteroids(retryCount + 1);
+        }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
@@ -87,6 +109,9 @@ function App() {
       if (data.success) {
         const normalized = data.asteroids.map(normalizeAsteroid);
         setAsteroids(normalized);
+        // Update cache
+        localStorage.setItem("asteroidCache", JSON.stringify(normalized));
+        localStorage.setItem("asteroidCacheTimestamp", Date.now().toString());
         if (!selectedAsteroid && normalized.length > 0) {
           setSelectedAsteroid(normalized[0]);
         }

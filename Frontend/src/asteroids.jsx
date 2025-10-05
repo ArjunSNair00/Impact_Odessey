@@ -65,7 +65,8 @@ const Asteroid = ({
   color = "#8B7355", // Color of asteroid
   textureUrl = null, // Optional texture for asteroid
   speed = 1, // Orbital speed multiplier
-  isSelected = false, // Selection state from parent
+  highlight = false, // Selection state from parent
+  isHazardous = false, // Hazard status of asteroid
 }) => {
   const meshRef = useRef();
   const epoch = useRef(Date.now());
@@ -130,7 +131,7 @@ const Asteroid = ({
   }, [color, textureUrl]);
 
   const { selectedAsteroid, onAsteroidClick } = useContext(AsteroidContext);
-  const isSelected = selectedAsteroid?.name === name;
+  const isSelected = highlight || selectedAsteroid?.name === name;
 
   // Animation loop
   useFrame((state) => {
@@ -155,14 +156,14 @@ const Asteroid = ({
     }
   });
 
-    // Draw orbit path
+  // Draw orbit path
   const orbitLine = useMemo(() => {
     // Use yellow color for selected asteroid's orbit, white for others
     const isHighlighted = isSelected || selectedAsteroid?.name === name;
     const orbitColor = isHighlighted ? "#ffff00" : "#aaaaaa";
     const points = [];
     const segments = 720; // More segments for smoother ellipse
-    
+
     for (let i = 0; i <= segments; i++) {
       const theta = (i / segments) * Math.PI * 2;
 

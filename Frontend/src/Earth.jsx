@@ -2,6 +2,7 @@ import { useRef, useMemo, useEffect } from "react";
 import { useFrame, useLoader, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import Asteroid from "./asteroids";
+import ImpactRiskVisualization from "./components/ImpactRiskVisualization";
 
 import earthColor from "./assets/Earth/earth_color_10K.png";
 import earthOcean from "./assets/Earth/earth_landocean_4K.png";
@@ -274,9 +275,9 @@ export default function Earth({
           inclination: 10,
           ascending_node: 50,
           perihelion_argument: 286,
-          mean_anomaly: 120
+          mean_anomaly: 120,
         },
-        diameter: 20
+        diameter: 20,
       },
       {
         name: "Example-2",
@@ -286,9 +287,9 @@ export default function Earth({
           inclination: 15,
           ascending_node: 120,
           perihelion_argument: 180,
-          mean_anomaly: 90
+          mean_anomaly: 90,
         },
-        diameter: 15
+        diameter: 15,
       },
       {
         name: "Example-3",
@@ -298,12 +299,11 @@ export default function Earth({
           inclination: 5,
           ascending_node: 200,
           perihelion_argument: 90,
-          mean_anomaly: 180
+          mean_anomaly: 180,
         },
-        diameter: 25
-      }
+        diameter: 25,
+      },
     ];
-
 
     if (asteroids && asteroids.length > 0) {
       // Map backend asteroid objects to the 3D Asteroid props
@@ -312,10 +312,13 @@ export default function Earth({
         const degToRad = (d) =>
           d === undefined || d === null ? 0 : (Number(d) * Math.PI) / 180;
 
-        // Scale down the semi-major axis to make orbits more visible
+        // Scale orbits to avoid Earth intersection (Earth is at scale 0.5)
+        const MIN_ORBIT = 1.2; // Minimum orbit radius to avoid Earth
+        const ORBIT_SCALE = 0.2; // Scale factor for orbits
+
         const a_scale = o.semi_major_axis
-          ? Number(o.semi_major_axis) * 0.3 // Reduced scale for better visibility
-          : 1.0;
+          ? Math.max(MIN_ORBIT, Number(o.semi_major_axis) * ORBIT_SCALE)
+          : MIN_ORBIT;
 
         // Visual size scale based on diameter
         const visualSize = a.diameter
@@ -326,6 +329,9 @@ export default function Earth({
         const orbitalSpeed = o.semi_major_axis
           ? 1 / Math.sqrt(Number(o.semi_major_axis))
           : 0.5;
+
+        // Determine if asteroid is hazardous
+        const isHazardous = a.is_potentially_hazardous === true;
 
         return {
           name: a.name || `NEO-${idx}`,
@@ -339,9 +345,21 @@ export default function Earth({
           meanAnomaly: o.mean_anomaly ? Number(o.mean_anomaly) : 0,
           size: visualSize,
           speed: orbitalSpeed,
-          color: `#${Math.floor(Math.random() * 16777215)
-            .toString(16)
-            .padStart(6, "0")}`,
+          isHazardous: a.is_potentially_hazardous || false,
+          impactProbability: a.impact_probability || 0,
+          impactEnergy: a.impact_energy || 0,
+          color: a.is_potentially_hazardous ? "#ff4444" : "#44ff44",
+          riskAssessment: {
+            torinoScale: a.torino_scale || 0,
+            impactEffects: {
+              destructionRadius: a.impact_effects?.destruction_radius_km || 0,
+              craterDiameter: a.impact_effects?.crater_diameter_km || 0,
+              fireballRadius: a.impact_effects?.fireball_radius_km || 0,
+              blastEffects: a.impact_effects?.blast_effects || {},
+              thermalEffects: a.impact_effects?.thermal_effects || {},
+              seismicEffects: a.impact_effects?.seismic_effects || {},
+            },
+          },
         };
       });
     }
@@ -358,15 +376,33 @@ export default function Earth({
         meanAnomaly: 0,
         size: 0.03,
         speed: 0.5,
-        color: `#${Math.floor(Math.random() * 16777215)
-          .toString(16)
-          .padStart(6, "0")}`,
+        color: "#44ff44", // Safe by default
+        isHazardous: false,
+        impactProbability: 0,
+        riskAssessment: {
+          torinoScale: 0,
+          impactEffects: {
+            destructionRadius: 0,
+            craterDiameter: 0,
+            fireballRadius: 0,
+            blastEffects: {},
+            thermalEffects: {},
+            seismicEffects: {},
+          },
+        },
       },
     ];
   }, [asteroids]);
 
   return (
     <group>
+      {selectedAsteroid && (
+        <ImpactRiskVisualization
+          asteroid={selectedAsteroid}
+          riskAssessment={selectedAsteroid.riskAssessment}
+          position={[0, 0, 0]}
+        />
+      )}
       <mesh ref={earthRef} frustumCulled={true}>
         <sphereGeometry
           args={[radius, segmentsRef.current, segmentsRef.current]}
@@ -387,8 +423,9 @@ export default function Earth({
           meanAnomaly={asteroid.meanAnomaly}
           size={asteroid.size}
           speed={asteroid.speed}
-          isSelected={selectedAsteroid?.name === asteroid.name}
+          highlight={selectedAsteroid?.name === asteroid.name}
           color={asteroid.color}
+          isHazardous={asteroid.is_potentially_hazardous}
         />
       ))}
     </group>

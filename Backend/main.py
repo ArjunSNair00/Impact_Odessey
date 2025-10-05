@@ -143,6 +143,10 @@ def get_asteroid_detail(asteroid_id):
 
 @app.route('/api/asteroids', methods=['GET'])
 def get_asteroids():
+    # Initialize retry mechanism
+    max_retries = 3
+    retry_count = 0
+    
     try:
         # Get query parameters
         fetch_details = request.args.get('details', 'false').lower() == 'true'
