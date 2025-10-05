@@ -1,5 +1,6 @@
 import React, { useContext } from "react";
 import { motion } from "framer-motion";
+import AsteroidSelector from "../components/AsteroidSelector";
 import ImpactRiskVisualization from "../components/ImpactRiskVisualization";
 import { AsteroidContext } from "../App";
 
@@ -8,7 +9,8 @@ function DataAnalysis() {
 
   if (!selectedAsteroid) {
     return (
-      <div className="text-white p-8 max-w-7xl mx-auto">
+      <div className="text-white pt-24 px-8 max-w-7xl mx-auto">
+        <AsteroidSelector />
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -27,7 +29,8 @@ function DataAnalysis() {
   }
 
   return (
-    <div className="text-white p-8 max-w-7xl mx-auto">
+    <div className="text-white pt-24 px-8 max-w-7xl mx-auto">
+      <AsteroidSelector />
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -118,86 +121,6 @@ function DataAnalysis() {
             </div>
           </div>
         </div>
-      </motion.div>
-    </div>
-  );
-
-  fetchOrbitData();
-  return (
-    <div className="text-white p-8 max-w-7xl mx-auto">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <h1 className="text-4xl font-bold mb-6">Real-Time Analysis</h1>
-
-        {loading ? (
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-zinc-900 p-6 rounded-lg">
-              <h2 className="text-2xl font-semibold mb-4">
-                Orbital Parameters
-              </h2>
-              {orbitData && (
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-gray-400">Semi-Major Axis</p>
-                    <p className="text-xl">{orbitData.semiMajorAxis} AU</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-400">Eccentricity</p>
-                    <p className="text-xl">{orbitData.eccentricity}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-400">Inclination</p>
-                    <p className="text-xl">{orbitData.inclination}°</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-400">Closest Approach</p>
-                    <p className="text-xl">{orbitData.closestApproach} km</p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="bg-zinc-900 p-6 rounded-lg">
-              <h2 className="text-2xl font-semibold mb-4">
-                Impact Risk Analysis
-              </h2>
-              <ImpactRiskVisualization />
-            </div>
-
-            <div className="bg-zinc-900 p-6 rounded-lg md:col-span-2">
-              <h2 className="text-2xl font-semibold mb-4">
-                Physical Characteristics
-              </h2>
-              {orbitData && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                  <div>
-                    <p className="text-gray-400">Estimated Diameter</p>
-                    <p className="text-xl">{orbitData.diameter} meters</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-400">Mass</p>
-                    <p className="text-xl">{orbitData.mass} kg</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-400">Velocity</p>
-                    <p className="text-xl">{orbitData.velocity} km/s</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-400">Composition</p>
-                    <p className="text-xl">{orbitData.composition}</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
       </motion.div>
     </div>
   );

@@ -154,6 +154,8 @@ const Asteroid = ({
 
   // Draw orbit path
   const orbitLine = useMemo(() => {
+    // Use yellow color for selected asteroid's orbit, white for others
+    const orbitColor = isSelected ? "#ffff00" : "#ffffff";
     const points = [];
     const segments = 720; // More segments for smoother ellipse
 
@@ -186,8 +188,8 @@ const Asteroid = ({
         <bufferGeometry attach="geometry" {...lineGeometry} />
         <lineBasicMaterial
           attach="material"
-          color="#666666"
-          opacity={0.5}
+          color={isSelected ? "#ffff00" : "#666666"}
+          opacity={isSelected ? 1 : 0.3}
           transparent
           side={THREE.DoubleSide}
           depthTest={false}
