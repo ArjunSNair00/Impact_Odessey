@@ -1,7 +1,6 @@
 import { useRef, useMemo, useEffect } from "react";
 import { useFrame, useLoader, useThree } from "@react-three/fiber";
 import * as THREE from "three";
-import Asteroid from "./asteroids";
 
 import earthColor from "./assets/Earth/earth_color_10K.png";
 import earthOcean from "./assets/Earth/earth_landocean_4K.png";
@@ -12,7 +11,7 @@ import earthNight from "./assets/Earth/earth_nightlights_10K.png";
 export default function Earth({
   radius = 0.5,
   rotationSpeed = 0.2,
-  bumpScale = 0.01,
+  bumpScale = 5,
 }) {
   const earthRef = useRef();
   const { camera } = useThree();
@@ -69,7 +68,7 @@ export default function Earth({
       optimizeTexture(colorMapOriginal, 2048),
       optimizeTexture(oceanMapOriginal, 1024),
       optimizeTexture(specularMapOriginal, 1024),
-      optimizeTexture(bumpMapOriginal, 500),
+      optimizeTexture(bumpMapOriginal, 1024),
       optimizeTexture(nightMapOriginal, 2048), // Night lights need good resolution
     ];
   }, [
@@ -133,34 +132,15 @@ export default function Earth({
         lightDirection: { value: new THREE.Vector3(5, 0, 2).normalize() },
       },
       vertexShader: `
-        uniform sampler2D bumpMap;
-        uniform float bumpScale;
-
         varying vec2 vUv;
         varying vec3 vNormal;
-        varying vec3 vTangent;
-        varying vec3 vBitangent;
         varying vec3 vWorldPosition;
         
         void main() {
           vUv = uv;
-          
-          // Calculate tangent space for normal mapping
-          vec3 normal = normalize(normalMatrix * normal);
-          vec3 tangent = normalize(normalMatrix * normalize(cross(normal, vec3(0.0, 1.0, 0.0))));
-          vec3 bitangent = normalize(cross(normal, tangent));
-          
-          vNormal = normal;
-          vTangent = tangent;
-          vBitangent = bitangent;
-
-          // Apply bump mapping displacement
-          float height = texture2D(bumpMap, vUv).r;
-          vec3 transformed = position + normalize(position) * height * bumpScale;
-          
-          vec4 worldPosition = modelMatrix * vec4(transformed, 1.0);
+          vNormal = normalize(normalMatrix * normal);
+          vec4 worldPosition = modelMatrix * vec4(position, 1.0);
           vWorldPosition = worldPosition.xyz;
-          
           gl_Position = projectionMatrix * viewMatrix * worldPosition;
         }
       `,
@@ -169,27 +149,14 @@ export default function Earth({
         uniform sampler2D nightTexture;
         uniform sampler2D specularMap;
         uniform sampler2D oceanMap;
-        uniform sampler2D bumpMap;
         uniform vec3 lightDirection;
-        uniform float bumpScale;
         
         varying vec2 vUv;
         varying vec3 vNormal;
-        varying vec3 vTangent;
-        varying vec3 vBitangent;
         varying vec3 vWorldPosition;
 
         void main() {
-          // Create TBN matrix for normal mapping
-          mat3 TBN = mat3(normalize(vTangent), normalize(vBitangent), normalize(vNormal));
-
-          // Sample bump map and create normal offset
-          vec2 dHdxy = vec2(
-            texture2D(bumpMap, vUv + vec2(0.001, 0.0)).r - texture2D(bumpMap, vUv - vec2(0.001, 0.0)).r,
-            texture2D(bumpMap, vUv + vec2(0.0, 0.001)).r - texture2D(bumpMap, vUv - vec2(0.0, 0.001)).r
-          ) * bumpScale;
-          
-          vec3 normal = normalize(vNormal + TBN * vec3(dHdxy.x, dHdxy.y, 0.0));
+          vec3 normal = normalize(vNormal);
           float lightIntensity = max(dot(normal, normalize(lightDirection)), 0.0);
           
           // Sample textures
@@ -259,85 +226,12 @@ export default function Earth({
     }
   });
 
-  // Example NEO (Near-Earth Object) asteroids with realistic orbital elements
-  const exampleAsteroids = useMemo(
-    () => [
-      {
-        // Example 1: Based on Apophis-like orbit
-        name: "NEO-1",
-        semiMajorAxis: 1.5, // AU (scaled)
-        eccentricity: 0.19, // Nearly circular orbit
-        inclination: 0.12, // ~7 degrees
-        ascendingNode: 0.5, // ~30 degrees
-        argOfPeriapsis: 1.2, // ~70 degrees
-        meanAnomaly: 0,
-        size: 0.03, // Scaled size
-        speed: 0.5,
-      },
-      {
-        // Example 2: More eccentric orbit
-        name: "NEO-2",
-        semiMajorAxis: 2.0,
-        eccentricity: 0.4, // More elliptical orbit
-        inclination: 0.35, // ~20 degrees
-        ascendingNode: 2.1,
-        argOfPeriapsis: 0.8,
-        meanAnomaly: Math.PI, // Start at opposite point
-        size: 0.02,
-        speed: 0.3,
-      },
-      {
-        // Example 3: Highly inclined orbit
-        name: "NEO-3",
-        semiMajorAxis: 1.8,
-        eccentricity: 0.25,
-        inclination: 0.785, // ~45 degrees
-        ascendingNode: 1.57, // ~90 degrees
-        argOfPeriapsis: 2.1,
-        meanAnomaly: Math.PI / 2, // Start at 90 degrees
-        size: 0.025,
-        speed: 0.4,
-      },
-      {
-        // Example 3: Highly inclined orbit
-        name: "NEO-4",
-        semiMajorAxis: 1.8,
-        eccentricity: 0.25,
-        inclination: 0.785, // ~45 degrees
-        ascendingNode: 1.57, // ~90 degrees
-        argOfPeriapsis: 2.1,
-        meanAnomaly: Math.PI / 2, // Start at 90 degrees
-        size: 0.06,
-        speed: 0.4,
-      },
-    ],
-    []
-  );
-
   return (
-    <group>
-      <mesh ref={earthRef} frustumCulled={true}>
-        <sphereGeometry
-          args={[radius, segmentsRef.current, segmentsRef.current]}
-        />
-        <primitive object={customShaderMaterial} attach="material" />
-      </mesh>
-
-      {/* Render asteroids */}
-      {exampleAsteroids.map((asteroid, index) => (
-        <Asteroid
-          key={index}
-          semiMajorAxis={asteroid.semiMajorAxis}
-          eccentricity={asteroid.eccentricity}
-          inclination={asteroid.inclination}
-          ascendingNode={asteroid.ascendingNode}
-          argOfPeriapsis={asteroid.argOfPeriapsis}
-          meanAnomaly={asteroid.meanAnomaly}
-          size={asteroid.size}
-          speed={asteroid.speed}
-          color={`#${Math.floor(Math.random() * 16777215).toString(16)}`}
-        />
-      ))}
-    </group>
+    <mesh ref={earthRef} frustumCulled={true}>
+      <sphereGeometry
+        args={[radius, segmentsRef.current, segmentsRef.current]}
+      />
+      <primitive object={customShaderMaterial} attach="material" />
+    </mesh>
   );
 }

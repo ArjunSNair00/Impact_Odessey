@@ -1,7 +1,6 @@
 import { useRef, useMemo, useEffect } from "react";
 import { useFrame, useLoader, useThree } from "@react-three/fiber";
 import * as THREE from "three";
-import Asteroid from "./asteroids";
 
 import earthColor from "./assets/Earth/earth_color_10K.png";
 import earthOcean from "./assets/Earth/earth_landocean_4K.png";
@@ -259,63 +258,29 @@ export default function Earth({
     }
   });
 
-  // Example NEO (Near-Earth Object) asteroids with realistic orbital elements
-  const exampleAsteroids = useMemo(
-    () => [
-      {
-        // Example 1: Based on Apophis-like orbit
-        name: "NEO-1",
-        semiMajorAxis: 1.5, // AU (scaled)
-        eccentricity: 0.19, // Nearly circular orbit
-        inclination: 0.12, // ~7 degrees
-        ascendingNode: 0.5, // ~30 degrees
-        argOfPeriapsis: 1.2, // ~70 degrees
-        meanAnomaly: 0,
-        size: 0.03, // Scaled size
-        speed: 0.5,
-      },
-      {
-        // Example 2: More eccentric orbit
-        name: "NEO-2",
-        semiMajorAxis: 2.0,
-        eccentricity: 0.4, // More elliptical orbit
-        inclination: 0.35, // ~20 degrees
-        ascendingNode: 2.1,
-        argOfPeriapsis: 0.8,
-        meanAnomaly: Math.PI, // Start at opposite point
-        size: 0.02,
-        speed: 0.3,
-      },
-      {
-        // Example 3: Highly inclined orbit
-        name: "NEO-3",
-        semiMajorAxis: 1.8,
-        eccentricity: 0.25,
-        inclination: 0.785, // ~45 degrees
-        ascendingNode: 1.57, // ~90 degrees
-        argOfPeriapsis: 2.1,
-        meanAnomaly: Math.PI / 2, // Start at 90 degrees
-        size: 0.025,
-        speed: 0.4,
-      },
-      {
-        // Example 3: Highly inclined orbit
-        name: "NEO-4",
-        semiMajorAxis: 1.8,
-        eccentricity: 0.25,
-        inclination: 0.785, // ~45 degrees
-        ascendingNode: 1.57, // ~90 degrees
-        argOfPeriapsis: 2.1,
-        meanAnomaly: Math.PI / 2, // Start at 90 degrees
-        size: 0.06,
-        speed: 0.4,
-      },
-    ],
-    []
-  );
+  // Create layered atmosphere materials
+  const atmosphereMaterials = useMemo(() => {
+    return [
+      { size: 1.02, opacity: 0.15, color: new THREE.Color(0x4444ff) },
+      { size: 1.04, opacity: 0.1, color: new THREE.Color(0x4466ff) },
+      { size: 1.07, opacity: 0.05, color: new THREE.Color(0x88aaff) },
+    ].map(
+      (layer) =>
+        new THREE.MeshBasicMaterial({
+          color: layer.color,
+          transparent: true,
+          opacity: layer.opacity,
+          side: THREE.DoubleSide,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+          depthTest: true,
+        })
+    );
+  }, []);
 
   return (
     <group>
+      {/* Main Earth */}
       <mesh ref={earthRef} frustumCulled={true}>
         <sphereGeometry
           args={[radius, segmentsRef.current, segmentsRef.current]}
@@ -323,20 +288,12 @@ export default function Earth({
         <primitive object={customShaderMaterial} attach="material" />
       </mesh>
 
-      {/* Render asteroids */}
-      {exampleAsteroids.map((asteroid, index) => (
-        <Asteroid
-          key={index}
-          semiMajorAxis={asteroid.semiMajorAxis}
-          eccentricity={asteroid.eccentricity}
-          inclination={asteroid.inclination}
-          ascendingNode={asteroid.ascendingNode}
-          argOfPeriapsis={asteroid.argOfPeriapsis}
-          meanAnomaly={asteroid.meanAnomaly}
-          size={asteroid.size}
-          speed={asteroid.speed}
-          color={`#${Math.floor(Math.random() * 16777215).toString(16)}`}
-        />
+      {/* Layered atmosphere for soft glow effect */}
+      {atmosphereMaterials.map((material, index) => (
+        <mesh key={index} frustumCulled={true}>
+          <sphereGeometry args={[radius * (1.02 + index * 0.02), 32, 32]} />
+          <primitive object={material} attach="material" />
+        </mesh>
       ))}
     </group>
   );
