@@ -47,56 +47,260 @@ export const AsteroidContext = createContext({});
 function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [selectedAsteroid, setSelectedAsteroid] = useState(null);
+  const [asteroids, setAsteroids] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
-  const location = useLocation();
 
-  // Define asteroid list
-  const asteroids = [
-    {
-      name: "NEO-1",
-      semiMajorAxis: 1.5,
-      eccentricity: 0.19,
-      inclination: 0.12,
-      ascendingNode: 0.5,
-      argOfPeriapsis: 1.2,
-      meanAnomaly: 0,
-      size: 0.03,
-      speed: 0.5,
-    },
-    {
-      name: "NEO-2",
-      semiMajorAxis: 2.0,
-      eccentricity: 0.4,
-      inclination: 0.35,
-      ascendingNode: 2.1,
-      argOfPeriapsis: 0.8,
-      meanAnomaly: Math.PI,
-      size: 0.02,
-      speed: 0.3,
-    },
-    {
-      name: "NEO-3",
-      semiMajorAxis: 1.8,
-      eccentricity: 0.25,
-      inclination: 0.785,
-      ascendingNode: 1.57,
-      argOfPeriapsis: 2.1,
-      meanAnomaly: Math.PI / 2,
-      size: 0.025,
-      speed: 0.4,
-    },
-    {
-      name: "NEO-4",
-      semiMajorAxis: 1.8,
-      eccentricity: 0.25,
-      inclination: 0.785,
-      ascendingNode: 1.57,
-      argOfPeriapsis: 2.1,
-      meanAnomaly: Math.PI / 2,
-      size: 0.06,
-      speed: 0.4,
-    },
-  ];
+  // Normalize asteroid objects into a consistent shape expected by DataAnalysis
+  // Effect to fetch asteroids when component mounts
+  useEffect(() => {
+    fetchAsteroids();
+  }, []); // Empty dependency array means this runs once on mount
+
+  const fetchAsteroids = async () => {
+    setLoading(true);
+    setError(null); // Clear any previous errors
+
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+
+      const response = await fetch(
+        "http://localhost:5000/api/asteroids?details=true",
+        {
+          signal: controller.signal,
+          headers: {
+            Accept: "application/json",
+            "Cache-Control": "max-age=300", // Cache for 5 minutes
+          },
+        }
+      );
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+
+      if (data.success) {
+        const normalized = data.asteroids.map(normalizeAsteroid);
+        setAsteroids(normalized);
+        if (!selectedAsteroid && normalized.length > 0) {
+          setSelectedAsteroid(normalized[0]);
+        }
+      } else {
+        throw new Error(data.error || "Failed to fetch asteroid data");
+      }
+    } catch (err) {
+      if (err.name === "AbortError") {
+        setError(
+          "Request is taking longer than expected. The server might be busy. Please try again in a moment."
+        );
+      } else {
+        setError(
+          "Unable to fetch asteroid data. Please check your internet connection and try again."
+        );
+        console.error("Error fetching asteroid data:", err);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const normalizeAsteroid = (ast) => {
+    // ast may come from backend (has orbit, diameter, velocity...) or from local example (semiMajorAxis...)
+    const orbit = ast.orbit || {};
+
+    // Basic orbital elements (with backward compatibility and null/undefined handling)
+    const semi_major_axis =
+      orbit.semi_major_axis !== null && orbit.semi_major_axis !== undefined
+        ? Number(orbit.semi_major_axis)
+        : ast.semiMajorAxis !== null && ast.semiMajorAxis !== undefined
+        ? Number(ast.semiMajorAxis)
+        : undefined;
+
+    const eccentricity =
+      orbit.eccentricity !== null && orbit.eccentricity !== undefined
+        ? Number(orbit.eccentricity)
+        : ast.eccentricity !== null && ast.eccentricity !== undefined
+        ? Number(ast.eccentricity)
+        : undefined;
+
+    const inclination = orbit.inclination
+      ? Number(orbit.inclination)
+      : ast.inclination
+      ? Number(ast.inclination)
+      : undefined;
+
+    const ascending_node = orbit.ascending_node
+      ? Number(orbit.ascending_node)
+      : ast.ascendingNode
+      ? Number(ast.ascendingNode)
+      : undefined;
+
+    const perihelion_argument = orbit.perihelion_argument
+      ? Number(orbit.perihelion_argument)
+      : ast.argOfPeriapsis
+      ? Number(ast.argOfPeriapsis)
+      : undefined;
+
+    const mean_anomaly = orbit.mean_anomaly
+      ? Number(orbit.mean_anomaly)
+      : ast.meanAnomaly
+      ? Number(ast.meanAnomaly)
+      : undefined;
+
+    // Additional orbital elements from NASA API
+    const epoch_osculation = orbit.epoch_osculation || ast.epoch || null;
+    const perihelion_distance = orbit.perihelion_distance
+      ? Number(orbit.perihelion_distance)
+      : undefined;
+    const aphelion_distance = orbit.aphelion_distance
+      ? Number(orbit.aphelion_distance)
+      : undefined;
+    // Calculate orbital period using Kepler's Third Law if we have semi-major axis
+    const orbital_period = semi_major_axis
+      ? Math.sqrt(Math.pow(semi_major_axis, 3)) * 365.25 // Convert to days
+      : orbit.orbital_period
+      ? Number(orbit.orbital_period)
+      : undefined;
+    const perihelion_time = orbit.perihelion_time
+      ? Number(orbit.perihelion_time)
+      : undefined;
+    const mean_motion = orbit.mean_motion
+      ? Number(orbit.mean_motion)
+      : undefined;
+    const orbit_uncertainty = orbit.orbit_uncertainty || null;
+    const minimum_orbit_intersection = orbit.minimum_orbit_intersection
+      ? Number(orbit.minimum_orbit_intersection)
+      : undefined;
+    const jupiter_tisserand_invariant = orbit.jupiter_tisserand_invariant
+      ? Number(orbit.jupiter_tisserand_invariant)
+      : undefined;
+    const epoch_close_approach = orbit.epoch_close_approach || null;
+    const orbit_determination_date = orbit.orbit_determination_date || null;
+    const observations_used = orbit.observations_used
+      ? Number(orbit.observations_used)
+      : undefined;
+    const data_arc_in_days = orbit.data_arc_in_days
+      ? Number(orbit.data_arc_in_days)
+      : undefined;
+    const orbit_class = {
+      type: orbit.orbit_class_type || null,
+      description: orbit.orbit_class_description || null,
+      range: orbit.orbit_class_range || null,
+    };
+
+    const diameter = ast.diameter
+      ? Number(ast.diameter)
+      : ast.size
+      ? Number(ast.size)
+      : undefined;
+    const velocity = ast.velocity
+      ? Number(ast.velocity)
+      : ast.speed
+      ? Number(ast.speed)
+      : undefined;
+    const miss_distance = ast.miss_distance
+      ? Number(ast.miss_distance)
+      : undefined;
+
+    return {
+      id: ast.id || ast.name || Math.random().toString(36).slice(2, 9),
+      name: ast.name || ast.id || "Unknown",
+      diameter,
+      velocity,
+      miss_distance,
+      is_potentially_hazardous:
+        ast.is_potentially_hazardous ?? ast.isPotentiallyHazardous ?? false,
+      close_approach_date:
+        ast.close_approach_date || ast.closeApproachDate || null,
+      orbit: {
+        // Basic orbital elements
+        semi_major_axis,
+        eccentricity,
+        inclination,
+        ascending_node,
+        perihelion_argument,
+        mean_anomaly,
+        epoch_osculation,
+        perihelion_distance,
+        aphelion_distance,
+        orbital_period,
+        // Additional orbital elements
+        perihelion_time,
+        mean_motion,
+        orbit_uncertainty,
+        minimum_orbit_intersection,
+        jupiter_tisserand_invariant,
+        epoch_close_approach,
+        orbit_determination_date,
+        observations_used,
+        data_arc_in_days,
+        orbit_class,
+      },
+      // keep original raw fields for debugging
+      __raw: ast,
+    };
+  };
+
+  useEffect(() => {
+    const fetchAsteroids = async () => {
+      setLoading(true);
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+        const response = await fetch(
+          "http://localhost:5000/api/asteroids?details=true",
+          {
+            signal: controller.signal,
+            headers: {
+              "Cache-Control": "no-cache",
+              Pragma: "no-cache",
+            },
+          }
+        );
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch asteroid data");
+        }
+        const data = await response.json();
+        if (data.success) {
+          const normalized = data.asteroids.map(normalizeAsteroid);
+          setAsteroids(normalized);
+          if (!selectedAsteroid && normalized.length > 0) {
+            setSelectedAsteroid(normalized[0]);
+          }
+        } else {
+          throw new Error(data.error || "Failed to fetch asteroid data");
+        }
+      } catch (err) {
+        if (err.name === "AbortError") {
+          setError("Request timed out. Please try again.");
+        } else {
+          setError(err.message || "Failed to fetch asteroid data");
+          console.error("Error fetching asteroid data:", err);
+          // Log additional details to help debug data issues
+          console.debug("Response details:", {
+            status: err.status,
+            statusText: err.statusText,
+            message: err.message,
+          });
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAsteroids();
+  }, []);
+
+  const location = useLocation();
   const [hasWebGL] = useState(() => {
     try {
       const canvas = document.createElement("canvas");
@@ -114,8 +318,11 @@ function App() {
         selectedAsteroid,
         setSelectedAsteroid,
         asteroids,
+        loading,
+        error,
         onAsteroidClick: (asteroid) => {
-          setSelectedAsteroid(asteroid);
+          const normalized = normalizeAsteroid(asteroid);
+          setSelectedAsteroid(normalized);
           navigate("/data");
         },
       }}
@@ -254,7 +461,11 @@ function App() {
                   color="#ffffff"
                   castShadow
                 />
-                <Earth />
+                <Earth
+                  asteroids={asteroids}
+                  selectedAsteroid={selectedAsteroid}
+                />
+                {/* pass fetched asteroids and selection into Earth for 3D simulation */}
                 <Starfield />
                 <OrbitControls
                   enablePan

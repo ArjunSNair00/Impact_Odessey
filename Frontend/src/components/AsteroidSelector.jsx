@@ -4,7 +4,7 @@ import { useLocation } from "react-router-dom";
 import { AsteroidContext } from "../App";
 
 function AsteroidSelector() {
-  const { selectedAsteroid, setSelectedAsteroid, asteroids } =
+  const { selectedAsteroid, setSelectedAsteroid, asteroids, loading, error } =
     useContext(AsteroidContext);
 
   // Set initial asteroid if none selected
@@ -38,6 +38,22 @@ function AsteroidSelector() {
 
   if (location.pathname !== "/data") return null;
 
+  if (loading) {
+    return (
+      <div className="fixed top-5 right-48 z-10 bg-zinc-900/90 p-2 rounded-lg text-white shadow-lg">
+        Loading asteroid data...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="fixed top-5 right-48 z-10 bg-zinc-900/90 p-2 rounded-lg text-red-500 shadow-lg">
+        Error: {error}
+      </div>
+    );
+  }
+
   return (
     <div className="fixed top-5 right-48 z-10 bg-zinc-900/90 p-2 rounded-lg text-white flex items-center shadow-lg">
       <div className="flex items-center space-x-2">
@@ -46,6 +62,7 @@ function AsteroidSelector() {
           whileTap={{ scale: 0.9 }}
           onClick={handlePrevAsteroid}
           className="bg-blue-500 hover:bg-blue-600 rounded-full w-8 h-8 flex items-center justify-center text-lg cursor-pointer"
+          disabled={!asteroids?.length}
         >
           ←
         </motion.button>

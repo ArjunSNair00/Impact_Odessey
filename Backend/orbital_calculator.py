@@ -77,7 +77,7 @@ class OrbitalCalculator:
         # Add perturbations (simplified)
         # Solar radiation pressure
         P_sr = 4.56e-6  # Solar radiation pressure at 1 AU (N/m²)
-        a_sr = -P_sr * (r / r_mag) * (AU / r_mag)**2
+        a_sr = -P_sr * (r / r_mag) * (OrbitalCalculator.AU / r_mag)**2
         
         # Combine accelerations
         a_total = a + a_sr

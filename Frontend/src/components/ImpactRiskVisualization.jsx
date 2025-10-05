@@ -25,7 +25,12 @@ const LANDMARK_COMPARISONS = [
 
 const ImpactRiskVisualization = ({ asteroid, riskAssessment }) => {
   const svgRef = useRef();
+  const plotRef = useRef();
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+  const [plotData, setPlotData] = useState(null);
+  const [hazardousList, setHazardousList] = useState([]);
+  const [plotLoading, setPlotLoading] = useState(true);
+  const [plotError, setPlotError] = useState(null);
 
   useEffect(() => {
     if (!svgRef.current || !riskAssessment) return;
@@ -235,6 +240,72 @@ const ImpactRiskVisualization = ({ asteroid, riskAssessment }) => {
       .text(`Torino Scale: ${riskAssessment.torino_scale}`);
   }, [dimensions, riskAssessment]);
 
+  // Fetch backend impact summary (Plotly-ready payload + hazardous list)
+  useEffect(() => {
+    let cancelled = false;
+    const fetchSummary = async () => {
+      try {
+        setPlotLoading(true);
+        const res = await fetch("/api/impact-summary");
+        if (!res.ok) throw new Error(`Server returned ${res.status}`);
+        const json = await res.json();
+        if (!json.success) throw new Error(json.error || "Unknown error");
+
+        if (cancelled) return;
+
+        setHazardousList(json.hazardous || []);
+        setPlotData(json.plotly || null);
+        setPlotError(null);
+      } catch (err) {
+        console.warn("Error loading impact summary", err);
+        setPlotError(err.message || String(err));
+      } finally {
+        setPlotLoading(false);
+      }
+    };
+
+    fetchSummary();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Ensure Plotly is loaded via CDN and render the plot when data arrives
+  useEffect(() => {
+    if (!plotData || !plotRef.current) return;
+
+    const ensurePlotly = () =>
+      new Promise((resolve, reject) => {
+        if (window.Plotly) return resolve(window.Plotly);
+        const script = document.createElement("script");
+        script.src = "https://cdn.plot.ly/plotly-2.24.1.min.js";
+        script.async = true;
+        script.onload = () => resolve(window.Plotly);
+        script.onerror = (e) => reject(new Error("Failed to load Plotly"));
+        document.head.appendChild(script);
+      });
+
+    let mounted = true;
+    ensurePlotly()
+      .then((Plotly) => {
+        if (!mounted) return;
+        try {
+          Plotly.newPlot(plotRef.current, plotData.data, plotData.layout || {});
+        } catch (e) {
+          console.error("Plotly render error", e);
+          setPlotError(String(e));
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load Plotly", err);
+        setPlotError(String(err));
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [plotData]);
+
   useEffect(() => {
     const updateDimensions = () => {
       if (svgRef.current) {
@@ -275,7 +346,7 @@ const ImpactRiskVisualization = ({ asteroid, riskAssessment }) => {
         </div>
       </div>
 
-      <div className="relative" style={{ height: "350px" }}>
+      <div className="relative" style={{ height: "220px" }}>
         <svg
           ref={svgRef}
           width="100%"
@@ -283,6 +354,33 @@ const ImpactRiskVisualization = ({ asteroid, riskAssessment }) => {
           viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}
           preserveAspectRatio="xMidYMid meet"
         />
+      </div>
+
+      <div className="mt-3">
+        <h4 className="font-medium">Hazardous Asteroids</h4>
+        {plotLoading && (
+          <div className="text-sm">Loading hazard summary...</div>
+        )}
+        {plotError && <div className="text-sm text-red-400">{plotError}</div>}
+        {!plotLoading && !plotError && (
+          <div>
+            <div ref={plotRef} style={{ height: "180px" }} />
+
+            <ul className="text-sm mt-2 max-h-40 overflow-auto">
+              {hazardousList.length === 0 && (
+                <li>No hazardous asteroids found.</li>
+              )}
+              {hazardousList.map((h) => (
+                <li key={h.id} className="py-1 border-b border-zinc-800">
+                  <div className="flex justify-between">
+                    <div>{h.name}</div>
+                    <div>{(h.impact_probability * 100).toExponential(3)}%</div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     </motion.div>
   );

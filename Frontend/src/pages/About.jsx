@@ -31,7 +31,7 @@ function About() {
       name: "M R Nandana",
       role: "Frontend Developer",
       description:
-        "Developed and optimized React components, ensuring responsive and reusable UI elements.",
+        "Made  Project powerpoint presentation in . Developed and optimized React components, ensuring responsive and reusable UI elements. ",
     },
     {
       name: "Muhammed Raihan",

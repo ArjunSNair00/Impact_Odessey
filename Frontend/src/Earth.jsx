@@ -13,6 +13,8 @@ export default function Earth({
   radius = 0.5,
   rotationSpeed = 0.2,
   bumpScale = 0.01,
+  asteroids = [],
+  selectedAsteroid,
 }) {
   const earthRef = useRef();
   const { camera } = useThree();
@@ -260,59 +262,108 @@ export default function Earth({
   });
 
   // Example NEO (Near-Earth Object) asteroids with realistic orbital elements
-  const exampleAsteroids = useMemo(
-    () => [
+  // Use asteroids from context (fetched from backend) when available
+  const exampleAsteroids = useMemo(() => {
+    // Dummy data for when no real asteroids are available
+    const dummyAsteroids = [
       {
-        // Example 1: Based on Apophis-like orbit
-        name: "NEO-1",
-        semiMajorAxis: 1.5, // AU (scaled)
-        eccentricity: 0.19, // Nearly circular orbit
-        inclination: 0.12, // ~7 degrees
-        ascendingNode: 0.5, // ~30 degrees
-        argOfPeriapsis: 1.2, // ~70 degrees
+        name: "Example-1",
+        orbit: {
+          semi_major_axis: 1.5,
+          eccentricity: 0.2,
+          inclination: 10,
+          ascending_node: 50,
+          perihelion_argument: 286,
+          mean_anomaly: 120
+        },
+        diameter: 20
+      },
+      {
+        name: "Example-2",
+        orbit: {
+          semi_major_axis: 2.2,
+          eccentricity: 0.15,
+          inclination: 15,
+          ascending_node: 120,
+          perihelion_argument: 180,
+          mean_anomaly: 90
+        },
+        diameter: 15
+      },
+      {
+        name: "Example-3",
+        orbit: {
+          semi_major_axis: 1.8,
+          eccentricity: 0.25,
+          inclination: 5,
+          ascending_node: 200,
+          perihelion_argument: 90,
+          mean_anomaly: 180
+        },
+        diameter: 25
+      }
+    ];
+
+
+    if (asteroids && asteroids.length > 0) {
+      // Map backend asteroid objects to the 3D Asteroid props
+      return asteroids.map((a, idx) => {
+        const o = a.orbit || {};
+        const degToRad = (d) =>
+          d === undefined || d === null ? 0 : (Number(d) * Math.PI) / 180;
+
+        // Scale down the semi-major axis to make orbits more visible
+        const a_scale = o.semi_major_axis
+          ? Number(o.semi_major_axis) * 0.3 // Reduced scale for better visibility
+          : 1.0;
+
+        // Visual size scale based on diameter
+        const visualSize = a.diameter
+          ? Math.max(0.02, Number(a.diameter) / 300)
+          : 0.04;
+
+        // Calculate orbital speed based on semi-major axis (Kepler's laws)
+        const orbitalSpeed = o.semi_major_axis
+          ? 1 / Math.sqrt(Number(o.semi_major_axis))
+          : 0.5;
+
+        return {
+          name: a.name || `NEO-${idx}`,
+          semiMajorAxis: a_scale,
+          eccentricity: o.eccentricity || 0.1,
+          inclination: degToRad(o.inclination || 0),
+          ascendingNode: degToRad(o.ascending_node || o.node_longitude || 0),
+          argOfPeriapsis: degToRad(
+            o.perihelion_argument || o.perihelion_argument || 0
+          ),
+          meanAnomaly: o.mean_anomaly ? Number(o.mean_anomaly) : 0,
+          size: visualSize,
+          speed: orbitalSpeed,
+          color: `#${Math.floor(Math.random() * 16777215)
+            .toString(16)
+            .padStart(6, "0")}`,
+        };
+      });
+    }
+
+    // Fallback: return a small static set if no data available
+    return [
+      {
+        name: "NEO-Example",
+        semiMajorAxis: 1.5,
+        eccentricity: 0.2,
+        inclination: 0.12,
+        ascendingNode: 0.5,
+        argOfPeriapsis: 1.2,
         meanAnomaly: 0,
-        size: 0.03, // Scaled size
+        size: 0.03,
         speed: 0.5,
+        color: `#${Math.floor(Math.random() * 16777215)
+          .toString(16)
+          .padStart(6, "0")}`,
       },
-      {
-        // Example 2: More eccentric orbit
-        name: "NEO-2",
-        semiMajorAxis: 2.0,
-        eccentricity: 0.4, // More elliptical orbit
-        inclination: 0.35, // ~20 degrees
-        ascendingNode: 2.1,
-        argOfPeriapsis: 0.8,
-        meanAnomaly: Math.PI, // Start at opposite point
-        size: 0.02,
-        speed: 0.3,
-      },
-      {
-        // Example 3: Highly inclined orbit
-        name: "NEO-3",
-        semiMajorAxis: 1.8,
-        eccentricity: 0.25,
-        inclination: 0.785, // ~45 degrees
-        ascendingNode: 1.57, // ~90 degrees
-        argOfPeriapsis: 2.1,
-        meanAnomaly: Math.PI / 2, // Start at 90 degrees
-        size: 0.025,
-        speed: 0.4,
-      },
-      {
-        // Example 3: Highly inclined orbit
-        name: "NEO-4",
-        semiMajorAxis: 1.8,
-        eccentricity: 0.25,
-        inclination: 0.785, // ~45 degrees
-        ascendingNode: 1.57, // ~90 degrees
-        argOfPeriapsis: 2.1,
-        meanAnomaly: Math.PI / 2, // Start at 90 degrees
-        size: 0.06,
-        speed: 0.4,
-      },
-    ],
-    []
-  );
+    ];
+  }, [asteroids]);
 
   return (
     <group>
@@ -327,6 +378,7 @@ export default function Earth({
       {exampleAsteroids.map((asteroid, index) => (
         <Asteroid
           key={index}
+          name={asteroid.name}
           semiMajorAxis={asteroid.semiMajorAxis}
           eccentricity={asteroid.eccentricity}
           inclination={asteroid.inclination}
@@ -335,7 +387,8 @@ export default function Earth({
           meanAnomaly={asteroid.meanAnomaly}
           size={asteroid.size}
           speed={asteroid.speed}
-          color={`#${Math.floor(Math.random() * 16777215).toString(16)}`}
+          isSelected={selectedAsteroid?.name === asteroid.name}
+          color={asteroid.color}
         />
       ))}
     </group>

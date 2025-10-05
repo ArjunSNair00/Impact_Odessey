@@ -54,6 +54,7 @@ class KeplerOrbit {
 
 // Asteroid Component
 const Asteroid = ({
+  name = null,
   semiMajorAxis = 20, // Distance from central body
   eccentricity = 0.2, // Orbit shape (0 = circle, 1 = parabola)
   inclination = 0.3, // Tilt of orbit in radians
@@ -64,6 +65,7 @@ const Asteroid = ({
   color = "#8B7355", // Color of asteroid
   textureUrl = null, // Optional texture for asteroid
   speed = 1, // Orbital speed multiplier
+  isSelected = false, // Selection state from parent
 }) => {
   const meshRef = useRef();
   const epoch = useRef(Date.now());
@@ -146,19 +148,21 @@ const Asteroid = ({
 
     // Highlight effect for selected asteroid
     if (meshRef.current.material) {
-      meshRef.current.material.emissive = isSelected
+      const isHighlighted = isSelected || selectedAsteroid?.name === name;
+      meshRef.current.material.emissive = isHighlighted
         ? new THREE.Color(0x666666)
         : new THREE.Color(0x000000);
     }
   });
 
-  // Draw orbit path
+    // Draw orbit path
   const orbitLine = useMemo(() => {
     // Use yellow color for selected asteroid's orbit, white for others
-    const orbitColor = isSelected ? "#ffff00" : "#ffffff";
+    const isHighlighted = isSelected || selectedAsteroid?.name === name;
+    const orbitColor = isHighlighted ? "#ffff00" : "#aaaaaa";
     const points = [];
     const segments = 720; // More segments for smoother ellipse
-
+    
     for (let i = 0; i <= segments; i++) {
       const theta = (i / segments) * Math.PI * 2;
 
@@ -188,11 +192,12 @@ const Asteroid = ({
         <bufferGeometry attach="geometry" {...lineGeometry} />
         <lineBasicMaterial
           attach="material"
-          color={isSelected ? "#ffff00" : "#666666"}
-          opacity={isSelected ? 1 : 0.3}
+          color={isSelected ? "#ffff00" : "#aaaaaa"}
+          opacity={isSelected ? 1 : 0.5}
           transparent
           side={THREE.DoubleSide}
           depthTest={false}
+          linewidth={2}
         />
       </lineLoop>
     );
