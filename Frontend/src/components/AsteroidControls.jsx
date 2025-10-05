@@ -2,10 +2,10 @@ import React from "react";
 import { motion } from "framer-motion";
 
 const AsteroidControls = ({
-  showLabels,
-  onToggleLabels,
-  scale,
-  onScaleChange,
+  showLabels = false,
+  onToggleLabels = () => {},
+  scale = 1e-5,
+  onScaleChange = () => {},
 }) => {
   return (
     <motion.div

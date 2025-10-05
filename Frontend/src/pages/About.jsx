@@ -33,7 +33,7 @@ function About() {
   };
 
   return (
-    <div className="text-white p-8 max-w-7xl mx-auto">
+    <div className="text-white pt-24 px-8 max-w-7xl mx-auto">
       <motion.div
         variants={containerVariants}
         initial="hidden"

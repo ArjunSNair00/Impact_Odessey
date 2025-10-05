@@ -162,7 +162,7 @@ function App() {
                     className="absolute flex w-[500px] left-10 rounded-lg top-32 p-6 bg-zinc-900/90 text-white z-10"
                   >
                     <p className="text-lg leading-relaxed">
-                      Meteor Madness is a NASA Space Apps Challenge project that
+                      Impact Odyssey is a NASA Space Apps Challenge project that
                       features an interactive simulation and visualization
                       platform. We transform complex NASA/USGS data into
                       accessible 2D/3D models to assess the risk of the
@@ -229,7 +229,7 @@ function App() {
             >
               <Canvas
                 camera={{
-                  position: [0, 0, 2],
+                  position: [0, 0, 7],
                   fov: 45,
                   near: 0.01,
                   far: 10000,
