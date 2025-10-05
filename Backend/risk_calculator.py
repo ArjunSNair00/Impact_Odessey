@@ -4,28 +4,39 @@ from typing import Dict, Any
 class RiskCalculator:
     def __init__(self):
         # Constants for impact energy calculation
-        self.rho = 3000  # kg/m³ (typical asteroid density)
-        self.v_impact = 17000  # m/s (typical impact velocity)
         self.earth_radius = 6371000  # m
-        self.g = 9.81  # m/s²
-        self.atmospheric_density = 1.225  # kg/m³ (at sea level)
+        self.g = 9.81  # m/s
+        self.atmospheric_density = 1.225  # kg/m (at sea level)
         self.heat_of_vaporization = 2.26e6  # J/kg (water)
         self.sound_speed = 343  # m/s (in air)
         
         # Impact effect thresholds
         self.thresholds = {
-            'glass_breaking': 1e3,  # Pa
-            'building_damage': 1e4,  # Pa
-            'severe_damage': 1e5,  # Pa
-            'mortality_50': 2e5,  # Pa
-            'reinforced_concrete_damage': 5e5,  # Pa
+            "glass_breaking": 1e3,  # Pa
+            "building_damage": 1e4,  # Pa
+            "severe_damage": 1e5,  # Pa
+            "mortality_50": 2e5,  # Pa
+            "reinforced_concrete_damage": 5e5,  # Pa
         }
 
-    def calculate_impact_energy(self, diameter: float) -> float:
+    def calculate_impact_energy(self, asteroid_data: Dict[str, Any]) -> float:
         """Calculate impact energy in megatons of TNT"""
-        radius = diameter / 2
-        mass = (4/3) * np.pi * (radius**3) * self.rho
-        energy_joules = 0.5 * mass * (self.v_impact**2)
+        diameter = asteroid_data.get("estimated_diameter_min", 10)  # meters
+        mass = asteroid_data.get("estimated_mass")  # kg
+        density = asteroid_data.get("density", 3000)  # kg/m
+        
+        if not mass:
+            # Calculate mass from diameter and density if not provided
+            radius = diameter / 2
+            mass = (4/3) * np.pi * (radius**3) * density
+        
+        # Get velocity from close approach data
+        velocity = 17000  # default m/s
+        if "close_approach_data" in asteroid_data and asteroid_data["close_approach_data"]:
+            v_kms = float(asteroid_data["close_approach_data"][0]["relative_velocity"]["kilometers_per_second"])
+            velocity = v_kms * 1000  # convert to m/s
+            
+        energy_joules = 0.5 * mass * (velocity**2)
         return energy_joules / (4.184e15)  # Convert to megatons TNT
 
     def calculate_impact_effects(self, energy_mt: float) -> Dict[str, Any]:
@@ -33,9 +44,14 @@ class RiskCalculator:
         energy_joules = energy_mt * 4.184e15  # Convert MT to joules
         
         # Basic impact parameters
-        crater_diameter = 2 * (energy_mt ** 0.33) * 1000  # meters to km
+        crater_diameter = 2 * (energy_mt ** 0.33)  # km
         fireball_radius = (energy_mt ** 0.4)  # km
         destruction_radius = (energy_mt ** 0.37) * 2  # km
+        
+        # Detailed crater formation
+        transient_crater_depth = crater_diameter * 0.28  # km
+        final_crater_depth = transient_crater_depth * 0.7  # km
+        ejecta_blanket_radius = crater_diameter * 1.5  # km
         
         # Blast wave calculations
         overpressure_1psi = 4.4 * (energy_mt ** 0.33)  # km
@@ -52,10 +68,12 @@ class RiskCalculator:
         fallout_radius = destruction_radius * 1.5  # km
 
         return {
+            "energy_megatons": energy_mt,  # Add energy field
             "crater_diameter_km": crater_diameter,
+            "crater_depth_km": final_crater_depth,
             "fireball_radius_km": fireball_radius,
             "destruction_radius_km": destruction_radius,
-            "energy_megatons": energy_mt,
+            "ejecta_blanket_radius_km": ejecta_blanket_radius,
             "blast_effects": {
                 "glass_breaking_radius_km": overpressure_1psi * 1.2,
                 "building_damage_radius_km": overpressure_1psi,
@@ -81,122 +99,112 @@ class RiskCalculator:
             }
         }
 
-    def calculate_torino_scale(self, energy_mt: float, impact_probability: float) -> int:
-        """Calculate Torino Scale value (0-10)"""
-        if impact_probability < 1e-10:
-            return 0
-
-        # Simplified Torino Scale calculation
-        if energy_mt < 1:
-            return 0 if impact_probability < 1e-4 else 1
-        elif energy_mt < 10:
-            if impact_probability < 1e-6:
-                return 0
-            elif impact_probability < 1e-4:
-                return 1
-            else:
-                return 2
-        elif energy_mt < 100:
-            if impact_probability < 1e-6:
-                return 1
-            elif impact_probability < 1e-4:
-                return 2
-            else:
-                return 3
-        elif energy_mt < 1000:
-            if impact_probability < 1e-6:
-                return 2
-            elif impact_probability < 1e-4:
-                return 3
-            else:
-                return 4
-        else:
-            if impact_probability < 1e-6:
-                return 3
-            elif impact_probability < 1e-4:
-                return 4
-            else:
-                return min(5 + int(np.log10(impact_probability) + 7), 10)
-
-    def calculate_palermo_scale(self, energy_mt: float, impact_probability: float, time_till_impact_years: float) -> float:
+    def calculate_palermo_scale(self, impact_probability: float, energy_mt: float, time_years: float = 50) -> float:
         """Calculate Palermo Technical Impact Hazard Scale"""
-        # Background annual risk of similar energy impact
-        background_frequency = 0.03 * (energy_mt ** -0.8)
+        # Background impact rate (impacts per year for this energy)
+        # Based on NEO population statistics
+        background_rate = 0.03 * (energy_mt ** -0.8)
         
-        # Calculate Palermo Scale
-        ps = np.log10(impact_probability / (background_frequency * time_till_impact_years))
-        return ps
+        # Risk relative to background
+        if background_rate > 0 and time_years > 0:
+            palermo = np.log10(impact_probability / (background_rate * time_years))
+        else:
+            palermo = -10.0  # Very low risk
+            
+        return palermo
+
+    def assess_risk(self, asteroid_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Perform comprehensive risk assessment for an asteroid"""
+        # Calculate impact energy
+        energy_mt = self.calculate_impact_energy(asteroid_data)
+        
+        # Calculate impact effects
+        impact_effects = self.calculate_impact_effects(energy_mt)
+        
+        # Calculate impact probability based on parameters
+        diameter = asteroid_data.get("estimated_diameter_min", 10)
+        velocity = 17000  # m/s default
+        if "close_approach_data" in asteroid_data and asteroid_data["close_approach_data"]:
+            v_kms = float(asteroid_data["close_approach_data"][0]["relative_velocity"]["kilometers_per_second"])
+            velocity = v_kms * 1000
+            
+        # Base probability calculation (simplified)
+        base_probability = 1e-6
+        if diameter > 100:
+            base_probability *= diameter / 100
+        if velocity > 20000:
+            base_probability *= velocity / 20000
+            
+        # Adjust for composition
+        density = asteroid_data.get("density", 3000)
+        if density > 5000:  # Iron-rich
+            base_probability *= 1.2
+        elif density < 2000:  # Ice-rich
+            base_probability *= 0.8
+            
+        # Calculate Palermo scale
+        palermo_scale = self.calculate_palermo_scale(base_probability, energy_mt)
+        
+        # Calculate risk zones
+        risk_zones = {
+            "immediate_destruction": {
+                "radius_km": impact_effects["destruction_radius_km"],
+                "description": "Complete devastation, no survival likely",
+                "severity": "Extreme"
+            },
+            "severe_damage": {
+                "radius_km": impact_effects["blast_effects"]["severe_damage_radius_km"],
+                "description": "Severe structural damage, high casualty rate",
+                "severity": "High"
+            },
+            "moderate_damage": {
+                "radius_km": impact_effects["blast_effects"]["building_damage_radius_km"],
+                "description": "Significant building damage, moderate casualties",
+                "severity": "Moderate"
+            },
+            "light_damage": {
+                "radius_km": impact_effects["blast_effects"]["glass_breaking_radius_km"],
+                "description": "Window breakage, minor injuries possible",
+                "severity": "Light"
+            }
+        }
+        
+        # Calculate casualty estimates (assuming average population density)
+        population_density = 300  # people per km
+        casualty_estimate = self.estimate_casualties(impact_effects, population_density)
+        
+        # Calculate threat level
+        torino_scale = 0
+        if energy_mt > 10000:
+            torino_scale = 10
+        elif energy_mt > 1000:
+            torino_scale = 8
+        elif energy_mt > 100:
+            torino_scale = 6
+        elif energy_mt > 10:
+            torino_scale = 4
+        elif energy_mt > 1:
+            torino_scale = 2
+            
+        return {
+            "impact_probability": base_probability,
+            "torino_scale": torino_scale,
+            "palermo_scale": palermo_scale,
+            "threat_level": "Severe" if torino_scale >= 8 else "High" if torino_scale >= 5 else "Moderate" if torino_scale >= 2 else "Low",
+            "impact_effects": impact_effects,
+            "risk_zones": risk_zones,
+            "casualty_estimate": casualty_estimate
+        }
 
     def estimate_casualties(self, impact_effects: Dict[str, Any], population_density: float = 300) -> Dict[str, Any]:
         """Estimate potential casualties based on impact effects and population density"""
-        destruction_area = np.pi * (impact_effects['destruction_radius_km'] ** 2)
-        severe_damage_area = np.pi * (impact_effects['blast_effects']['severe_damage_radius_km'] ** 2)
-        affected_area = np.pi * (impact_effects['blast_effects']['glass_breaking_radius_km'] ** 2)
+        destruction_area = np.pi * (impact_effects["destruction_radius_km"] ** 2)
+        severe_damage_area = np.pi * (impact_effects["blast_effects"]["severe_damage_radius_km"] ** 2)
+        affected_area = np.pi * (impact_effects["blast_effects"]["glass_breaking_radius_km"] ** 2)
         
         return {
             "direct_casualties": int(destruction_area * population_density),
             "severe_injuries": int((severe_damage_area - destruction_area) * population_density * 0.5),
             "affected_population": int(affected_area * population_density),
-            "evacuation_radius_km": max(impact_effects['destruction_radius_km'] * 1.5,
-                                      impact_effects['atmospheric_effects']['fallout_radius_km'])
-        }
-    
-    def assess_risk(self, asteroid_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Perform comprehensive risk assessment for an asteroid"""
-        diameter = asteroid_data.get('estimated_diameter_min', 10)  # meters
-        # Use orbital elements to estimate probability (simplified)
-        e = asteroid_data.get('orbital_elements', {}).get('eccentricity', 0)
-        a = asteroid_data.get('orbital_elements', {}).get('semi_major_axis', 1)
-        i = asteroid_data.get('orbital_elements', {}).get('inclination', 0)
-        
-        # Enhanced impact probability calculation including inclination
-        base_probability = 1e-6 * (1 + abs(1 - a)) * (1 + e)
-        inclination_factor = np.exp(-i / 30)  # reduces probability for high inclination orbits
-        impact_probability = max(1e-10, min(1e-3, base_probability * inclination_factor))
-        
-        # Calculate impact energy
-        energy_mt = self.calculate_impact_energy(diameter)
-        
-        # Calculate detailed effects
-        impact_effects = self.calculate_impact_effects(energy_mt)
-        
-        # Estimate casualties (using global average population density)
-        casualty_estimate = self.estimate_casualties(impact_effects)
-        
-        # Calculate risk scales
-        torino = self.calculate_torino_scale(energy_mt, impact_probability)
-        palermo = self.calculate_palermo_scale(energy_mt, impact_probability, 50)
-        
-        # Calculate risk zones
-        risk_zones = {
-            "immediate_danger_zone_km": impact_effects["destruction_radius_km"],
-            "evacuation_zone_km": casualty_estimate["evacuation_radius_km"],
-            "monitoring_zone_km": impact_effects["blast_effects"]["glass_breaking_radius_km"]
-        }
-        
-        # Temporal risk assessment
-        orbital_period = 2 * np.pi * np.sqrt((a * 1.496e8) ** 3 / (6.67e-11 * 1.989e30))
-        next_approach = orbital_period / (365.25 * 24 * 3600)  # years
-        
-        return {
-            "impact_probability": impact_probability,
-            "impact_effects": impact_effects,
-            "torino_scale": torino,
-            "palermo_scale": palermo,
-            "casualty_estimate": casualty_estimate,
-            "risk_zones": risk_zones,
-            "temporal_assessment": {
-                "orbital_period_years": next_approach,
-                "next_approach_years": next_approach,
-                "observation_urgency": "HIGH" if torino >= 3 else "MEDIUM" if torino >= 1 else "LOW"
-            },
-            "mitigation_assessment": {
-                "difficulty": "HIGH" if energy_mt > 1000 else "MEDIUM" if energy_mt > 100 else "LOW",
-                "response_time_needed_years": max(2, np.log10(energy_mt)),
-                "recommended_actions": [
-                    "Continuous monitoring" if torino >= 1 else "Regular monitoring",
-                    "Evacuation planning" if torino >= 5 else "Risk assessment",
-                    "Deflection mission planning" if torino >= 7 else "Technology preparation"
-                ]
-            }
+            "evacuation_radius_km": impact_effects["destruction_radius_km"] * 1.5
         }

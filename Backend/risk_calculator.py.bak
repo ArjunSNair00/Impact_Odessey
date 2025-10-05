@@ -1,0 +1,662 @@
+import numpy as npimport numpy as np
+
+from typing import Dict, Anyfrom typing import Dict, Any
+
+
+
+class RiskCalculator:class RiskCalculator:
+
+    def __init__(self):    def __init__(self):
+
+        # Constants for impact energy calculation        # Constants for impact energy calculation
+
+        self.rho = 3000  # kg/m³ (typical asteroid density)        self.rho = 3000  # kg/m³ (typical asteroid density)
+
+        self.v_impact = 17000  # m/s (typical impact velocity)        self.v_impact =         # Calculate infrastructure impact
+
+        self.earth_radius = 6371000  # m        infrastructure_impact = {
+
+        self.g = 9.81  # m/s²            "power_grid": {
+
+        self.atmospheric_density = 1.225  # kg/m³ (at sea level)                "severity": "Severe" if energy_mt > 100 else "Moderate" if energy_mt > 10 else "Light",
+
+        self.heat_of_vaporization = 2.26e6  # J/kg (water)                "radius_km": impact_effects["blast_effects"]["severe_damage_radius_km"] * 1.5,
+
+        self.sound_speed = 343  # m/s (in air)                "recovery_time_days": int(30 * np.log10(energy_mt + 1))
+
+                    },
+
+        # Impact effect thresholds            "communications": {
+
+        self.thresholds = {                "severity": "Severe" if energy_mt > 50 else "Moderate" if energy_mt > 5 else "Light",
+
+            'glass_breaking': 1e3,  # Pa                "radius_km": impact_effects["blast_effects"]["severe_damage_radius_km"] * 2,
+
+            'building_damage': 1e4,  # Pa                "recovery_time_days": int(20 * np.log10(energy_mt + 1))
+
+            'severe_damage': 1e5,  # Pa            },
+
+            'mortality_50': 2e5,  # Pa            "transportation": {
+
+            'reinforced_concrete_damage': 5e5,  # Pa                "severity": "Severe" if energy_mt > 200 else "Moderate" if energy_mt > 20 else "Light",
+
+        }                "radius_km": impact_effects["blast_effects"]["severe_damage_radius_km"] * 1.2,
+
+                "recovery_time_days": int(45 * np.log10(energy_mt + 1))
+
+    def calculate_impact_energy(self, diameter: float) -> float:            }
+
+        """Calculate impact energy in megatons of TNT"""        }
+
+        radius = diameter / 2
+
+        mass = (4/3) * np.pi * (radius**3) * self.rho        # Generate mitigation strategies based on impact energy and time
+
+        energy_joules = 0.5 * mass * (self.v_impact**2)        mitigation_strategies = []
+
+        return energy_joules / (4.184e15)  # Convert to megatons TNT        if energy_mt > 1000:
+
+            mitigation_strategies.extend([
+
+    def calculate_impact_effects(self, energy_mt: float) -> Dict[str, Any]:                "Deploy nuclear deflection mission",
+
+        """Calculate detailed impact effects based on impact energy"""                "Prepare global evacuation plans",
+
+        energy_joules = energy_mt * 4.184e15  # Convert MT to joules                "Activate emergency response networks"
+
+                    ])
+
+        # Basic impact parameters        elif energy_mt > 100:
+
+        crater_diameter = 2 * (energy_mt ** 0.33) * 1000  # meters to km            mitigation_strategies.extend([
+
+        fireball_radius = (energy_mt ** 0.4)  # km                "Deploy kinetic impact mission",
+
+        destruction_radius = (energy_mt ** 0.37) * 2  # km                "Prepare regional evacuation plans",
+
+                        "Establish emergency response centers"
+
+        # Detailed crater formation            ])
+
+        transient_crater_depth = crater_diameter * 0.28  # km        else:
+
+        final_crater_depth = transient_crater_depth * 0.7  # km            mitigation_strategies.extend([
+
+        ejecta_blanket_radius = crater_diameter * 1.5  # km                "Monitor trajectory refinement",
+
+                        "Prepare local emergency plans",
+
+        # Blast wave calculations                "Update early warning systems"
+
+        overpressure_1psi = 4.4 * (energy_mt ** 0.33)  # km            ])
+
+        overpressure_20psi = 1.1 * (energy_mt ** 0.33)  # km
+
+                return {
+
+        # Thermal radiation effects            "physical_characteristics": {
+
+        thermal_radius = 1.2 * (energy_mt ** 0.4)  # km                "diameter_meters": diameter,
+
+                        "impact_energy_megatons": energy_mt,
+
+        # Seismic effects                "estimated_mass_kg": (4/3) * np.pi * ((diameter/2)**3) * self.rho
+
+        richter_scale = 0.67 * (np.log10(energy_joules) - 4.8)            },
+
+                    "orbital_parameters": {
+
+        # Atmospheric effects                "eccentricity": e,
+
+        airburst_altitude = 8 * np.log10(energy_mt + 1)  # km                "semi_major_axis_au": a,
+
+        fallout_radius = destruction_radius * 1.5  # km                "inclination_deg": i,
+
+                "orbital_period_years": orbital_period,
+
+        return {                "minimum_orbit_intersection_distance_au": moid
+
+            "crater_diameter_km": crater_diameter,            },
+
+            "crater_depth_km": final_crater_depth,            "risk_assessment": {
+
+            "fireball_radius_km": fireball_radius,                "impact_probability": orbital_probability,
+
+            "destruction_radius_km": destruction_radius,                "torino_scale": torino,
+
+            "ejecta_blanket_radius_km": ejecta_blanket_radius,                "palermo_scale": palermo,
+
+            "blast_effects": {                "threat_level": "Severe" if torino >= 8 else "High" if torino >= 5 else "Moderate" if torino >= 2 else "Low",
+
+                "glass_breaking_radius_km": overpressure_1psi * 1.2,                "confidence_level": "High" if orbital_probability > 1e-6 else "Medium" if orbital_probability > 1e-8 else "Low"
+
+                "building_damage_radius_km": overpressure_1psi,            },
+
+                "severe_damage_radius_km": overpressure_20psi            "impact_effects": impact_effects,
+
+            },            "risk_zones": risk_zones,
+
+            "thermal_effects": {            "casualty_estimate": casualty_estimate,
+
+                "radius_km": thermal_radius,            "infrastructure_impact": infrastructure_impact,
+
+                "third_degree_burns_radius_km": thermal_radius * 0.7            "temporal_assessment": {
+
+            },                "current_year": current_year,
+
+            "seismic_effects": {                "next_approach_year": next_approach,
+
+                "richter_scale": richter_scale,                "years_until_impact": time_till_impact,
+
+                "felt_radius_km": 10 ** (0.5 * richter_scale)                "observation_urgency": "CRITICAL" if torino >= 8 else "HIGH" if torino >= 3 else "MEDIUM" if torino >= 1 else "LOW",
+
+            },                "observation_priority": 1 if torino >= 8 else 2 if torino >= 3 else 3 if torino >= 1 else 4
+
+            "atmospheric_effects": {            },
+
+                "airburst_altitude_km": airburst_altitude,            "mitigation_assessment": {
+
+                "fallout_radius_km": fallout_radius,                "difficulty": "EXTREME" if energy_mt > 10000 else "HIGH" if energy_mt > 1000 else "MEDIUM" if energy_mt > 100 else "LOW",
+
+                "global_effects": energy_mt > 1000                "response_time_needed_years": max(2, np.log10(energy_mt)),
+
+            },                "response_window_adequate": time_till_impact > max(2, np.log10(energy_mt)),
+
+            "long_term_effects": {                "mitigation_strategies": mitigation_strategies,
+
+                "climate_effects": energy_mt > 10000,                "success_probability": max(0.1, min(0.9, 1 - (orbital_probability * np.log10(energy_mt + 1))))
+
+                "mass_extinction_risk": energy_mt > 100000,            },ical impact velocity)
+
+                "dust_settling_days": int(10 * np.log10(energy_mt + 1))        self.earth_radius = 6371000  # m
+
+            }        self.g = 9.81  # m/s²
+
+        }        self.atmospheric_density = 1.225  # kg/m³ (at sea level)
+
+        self.heat_of_vaporization = 2.26e6  # J/kg (water)
+
+    def calculate_torino_scale(self, energy_mt: float, impact_probability: float) -> int:        self.sound_speed = 343  # m/s (in air)
+
+        """Calculate Torino Scale value (0-10)"""        
+
+        if impact_probability < 1e-10:        # Impact effect thresholds
+
+            return 0        self.thresholds = {
+
+            'glass_breaking': 1e3,  # Pa
+
+        # Simplified Torino Scale calculation            'building_damage': 1e4,  # Pa
+
+        if energy_mt < 1:            'severe_damage': 1e5,  # Pa
+
+            return 0 if impact_probability < 1e-4 else 1            'mortality_50': 2e5,  # Pa
+
+        elif energy_mt < 10:            'reinforced_concrete_damage': 5e5,  # Pa
+
+            if impact_probability < 1e-6:        }
+
+                return 0
+
+            elif impact_probability < 1e-4:    def calculate_impact_energy(self, diameter: float) -> float:
+
+                return 1        """Calculate impact energy in megatons of TNT"""
+
+            else:        radius = diameter / 2
+
+                return 2        mass = (4/3) * np.pi * (radius**3) * self.rho
+
+        elif energy_mt < 100:        energy_joules = 0.5 * mass * (self.v_impact**2)
+
+            if impact_probability < 1e-6:        return energy_joules / (4.184e15)  # Convert to megatons TNT
+
+                return 1
+
+            elif impact_probability < 1e-4:    def calculate_impact_effects(self, energy_mt: float) -> Dict[str, Any]:
+
+                return 2        """Calculate detailed impact effects based on impact energy"""
+
+            else:        energy_joules = energy_mt * 4.184e15  # Convert MT to joules
+
+                return 3        
+
+        elif energy_mt < 1000:        # Basic impact parameters
+
+            if impact_probability < 1e-6:        crater_diameter = 2 * (energy_mt ** 0.33) * 1000  # meters to km
+
+                return 2        fireball_radius = (energy_mt ** 0.4)  # km
+
+            elif impact_probability < 1e-4:        destruction_radius = (energy_mt ** 0.37) * 2  # km
+
+                return 3        
+
+            else:        # Detailed crater formation
+
+                return 4        transient_crater_depth = crater_diameter * 0.28  # km
+
+        else:        final_crater_depth = transient_crater_depth * 0.7  # km
+
+            if impact_probability < 1e-6:        ejecta_blanket_radius = crater_diameter * 1.5  # km
+
+                return 3        
+
+            elif impact_probability < 1e-4:        # Blast wave calculations
+
+                return 4        overpressure_1psi = 4.4 * (energy_mt ** 0.33)  # km
+
+            else:        overpressure_20psi = 1.1 * (energy_mt ** 0.33)  # km
+
+                return min(5 + int(np.log10(impact_probability) + 7), 10)        
+
+        # Thermal radiation effects
+
+    def calculate_palermo_scale(self, energy_mt: float, impact_probability: float, time_till_impact_years: float) -> float:        thermal_radius = 1.2 * (energy_mt ** 0.4)  # km
+
+        """Calculate Palermo Technical Impact Hazard Scale"""        
+
+        # Background annual risk of similar energy impact        # Seismic effects
+
+        background_frequency = 0.03 * (energy_mt ** -0.8)        richter_scale = 0.67 * (np.log10(energy_joules) - 4.8)
+
+                
+
+        # Calculate Palermo Scale        # Atmospheric effects
+
+        ps = np.log10(impact_probability / (background_frequency * time_till_impact_years))        airburst_altitude = 8 * np.log10(energy_mt + 1)  # km
+
+        return ps        fallout_radius = destruction_radius * 1.5  # km
+
+
+
+    def estimate_casualties(self, impact_effects: Dict[str, Any], population_density: float = 300) -> Dict[str, Any]:        return {
+
+        """Estimate potential casualties based on impact effects and population density"""            "crater_diameter_km": crater_diameter,
+
+        destruction_area = np.pi * (impact_effects['destruction_radius_km'] ** 2)            "fireball_radius_km": fireball_radius,
+
+        severe_damage_area = np.pi * (impact_effects['blast_effects']['severe_damage_radius_km'] ** 2)            "destruction_radius_km": destruction_radius,
+
+        affected_area = np.pi * (impact_effects['blast_effects']['glass_breaking_radius_km'] ** 2)            "energy_megatons": energy_mt,
+
+                    "blast_effects": {
+
+        return {                "glass_breaking_radius_km": overpressure_1psi * 1.2,
+
+            "direct_casualties": int(destruction_area * population_density),                "building_damage_radius_km": overpressure_1psi,
+
+            "severe_injuries": int((severe_damage_area - destruction_area) * population_density * 0.5),                "severe_damage_radius_km": overpressure_20psi
+
+            "affected_population": int(affected_area * population_density),            },
+
+            "evacuation_radius_km": max(impact_effects['destruction_radius_km'] * 1.5,            "thermal_effects": {
+
+                                      impact_effects['atmospheric_effects']['fallout_radius_km'])                "radius_km": thermal_radius,
+
+        }                "third_degree_burns_radius_km": thermal_radius * 0.7
+
+                },
+
+    def assess_risk(self, asteroid_data: Dict[str, Any]) -> Dict[str, Any]:            "seismic_effects": {
+
+        """Perform comprehensive risk assessment for an asteroid"""                "richter_scale": richter_scale,
+
+        # Extract physical parameters                "felt_radius_km": 10 ** (0.5 * richter_scale)
+
+        diameter = asteroid_data.get('estimated_diameter_min', 10)  # meters            },
+
+        orbit_data = asteroid_data.get('orbital_elements', {})            "atmospheric_effects": {
+
+                        "airburst_altitude_km": airburst_altitude,
+
+        # Orbital parameters                "fallout_radius_km": fallout_radius,
+
+        e = orbit_data.get('eccentricity', 0)  # eccentricity                "global_effects": energy_mt > 1000
+
+        a = orbit_data.get('semi_major_axis', 1)  # semi-major axis (AU)            },
+
+        i = orbit_data.get('inclination', 0)  # inclination (degrees)            "long_term_effects": {
+
+                        "climate_effects": energy_mt > 10000,
+
+        # Calculate impact energy                "mass_extinction_risk": energy_mt > 100000,
+
+        energy_mt = self.calculate_impact_energy(diameter)                "dust_settling_days": int(10 * np.log10(energy_mt + 1))
+
+                    }
+
+        # Calculate impact probability based on orbital parameters        }
+
+        moid = abs(1 - a * (1 - e))  # Simplified MOID calculation
+
+        base_probability = 1e-6 * (1 / (1 + np.exp(20 * moid)))  # Logistic function of MOID    def calculate_torino_scale(self, energy_mt: float, impact_probability: float) -> int:
+
+        orbital_probability = base_probability * (1 - min(i, 90) / 90)  # Include inclination effect        """Calculate Torino Scale value (0-10)"""
+
+                if impact_probability < 1e-10:
+
+        # Time factors            return 0
+
+        current_year = 2025
+
+        orbital_period = a ** 1.5  # Kepler's Third Law        # Simplified Torino Scale calculation
+
+        next_approach = current_year + orbital_period        if energy_mt < 1:
+
+        time_till_impact = next_approach - current_year            return 0 if impact_probability < 1e-4 else 1
+
+                elif energy_mt < 10:
+
+        # Calculate risk scales            if impact_probability < 1e-6:
+
+        torino = self.calculate_torino_scale(energy_mt, orbital_probability)                return 0
+
+        palermo = self.calculate_palermo_scale(energy_mt, orbital_probability, time_till_impact)            elif impact_probability < 1e-4:
+
+                        return 1
+
+        # Calculate detailed impact effects            else:
+
+        impact_effects = self.calculate_impact_effects(energy_mt)                return 2
+
+                elif energy_mt < 100:
+
+        # Define risk zones based on impact effects            if impact_probability < 1e-6:
+
+        risk_zones = {                return 1
+
+            "immediate_destruction": {            elif impact_probability < 1e-4:
+
+                "radius_km": impact_effects["destruction_radius_km"],                return 2
+
+                "description": "Complete devastation, no survival likely",            else:
+
+                "population_density": 300  # assumed average density per km²                return 3
+
+            },        elif energy_mt < 1000:
+
+            "severe_damage": {            if impact_probability < 1e-6:
+
+                "radius_km": impact_effects["blast_effects"]["severe_damage_radius_km"],                return 2
+
+                "description": "Severe structural damage, high casualty rate",            elif impact_probability < 1e-4:
+
+                "infrastructure_damage": "90-100%"                return 3
+
+            },            else:
+
+            "moderate_damage": {                return 4
+
+                "radius_km": impact_effects["blast_effects"]["building_damage_radius_km"],        else:
+
+                "description": "Significant building damage, moderate casualties",            if impact_probability < 1e-6:
+
+                "infrastructure_damage": "50-75%"                return 3
+
+            },            elif impact_probability < 1e-4:
+
+            "light_damage": {                return 4
+
+                "radius_km": impact_effects["blast_effects"]["glass_breaking_radius_km"],            else:
+
+                "description": "Window breakage, minor injuries possible",                return min(5 + int(np.log10(impact_probability) + 7), 10)
+
+                "infrastructure_damage": "10-25%"
+
+            }    def calculate_palermo_scale(self, energy_mt: float, impact_probability: float, time_till_impact_years: float) -> float:
+
+        }        """Calculate Palermo Technical Impact Hazard Scale"""
+
+                # Background annual risk of similar energy impact
+
+        # Calculate casualty estimates        background_frequency = 0.03 * (energy_mt ** -0.8)
+
+        casualty_estimate = self.estimate_casualties(impact_effects)        
+
+                # Calculate Palermo Scale
+
+        # Infrastructure impact assessment        ps = np.log10(impact_probability / (background_frequency * time_till_impact_years))
+
+        infrastructure_impact = {        return ps
+
+            "power_grid": {
+
+                "severity": "Severe" if energy_mt > 100 else "Moderate" if energy_mt > 10 else "Light",    def estimate_casualties(self, impact_effects: Dict[str, Any], population_density: float = 300) -> Dict[str, Any]:
+
+                "radius_km": impact_effects["blast_effects"]["severe_damage_radius_km"] * 1.5,        """Estimate potential casualties based on impact effects and population density"""
+
+                "recovery_time_days": int(30 * np.log10(energy_mt + 1))        destruction_area = np.pi * (impact_effects['destruction_radius_km'] ** 2)
+
+            },        severe_damage_area = np.pi * (impact_effects['blast_effects']['severe_damage_radius_km'] ** 2)
+
+            "communications": {        affected_area = np.pi * (impact_effects['blast_effects']['glass_breaking_radius_km'] ** 2)
+
+                "severity": "Severe" if energy_mt > 50 else "Moderate" if energy_mt > 5 else "Light",        
+
+                "radius_km": impact_effects["blast_effects"]["severe_damage_radius_km"] * 2,        return {
+
+                "recovery_time_days": int(20 * np.log10(energy_mt + 1))            "direct_casualties": int(destruction_area * population_density),
+
+            },            "severe_injuries": int((severe_damage_area - destruction_area) * population_density * 0.5),
+
+            "transportation": {            "affected_population": int(affected_area * population_density),
+
+                "severity": "Severe" if energy_mt > 200 else "Moderate" if energy_mt > 20 else "Light",            "evacuation_radius_km": max(impact_effects['destruction_radius_km'] * 1.5,
+
+                "radius_km": impact_effects["blast_effects"]["severe_damage_radius_km"] * 1.2,                                      impact_effects['atmospheric_effects']['fallout_radius_km'])
+
+                "recovery_time_days": int(45 * np.log10(energy_mt + 1))        }
+
+            }    
+
+        }    def assess_risk(self, asteroid_data: Dict[str, Any]) -> Dict[str, Any]:
+
+        """Perform comprehensive risk assessment for an asteroid"""
+
+        # Generate mitigation strategies        # Extract physical parameters
+
+        mitigation_strategies = []        diameter = asteroid_data.get('estimated_diameter_min', 10)  # meters
+
+        if energy_mt > 1000:        orbit_data = asteroid_data.get('orbital_elements', {})
+
+            mitigation_strategies.extend([        
+
+                "Deploy nuclear deflection mission",        # Orbital parameters
+
+                "Prepare global evacuation plans",        e = orbit_data.get('eccentricity', 0)  # eccentricity
+
+                "Activate emergency response networks"        a = orbit_data.get('semi_major_axis', 1)  # semi-major axis (AU)
+
+            ])        i = orbit_data.get('inclination', 0)  # inclination (degrees)
+
+        elif energy_mt > 100:        
+
+            mitigation_strategies.extend([        # Calculate impact energy
+
+                "Deploy kinetic impact mission",        energy_mt = self.calculate_impact_energy(diameter)
+
+                "Prepare regional evacuation plans",        
+
+                "Establish emergency response centers"        # Calculate impact probability based on orbital parameters
+
+            ])        moid = abs(1 - a * (1 - e))  # Simplified MOID calculation
+
+        else:        base_probability = 1e-6 * (1 / (1 + np.exp(20 * moid)))  # Logistic function of MOID
+
+            mitigation_strategies.extend([        orbital_probability = base_probability * (1 - min(i, 90) / 90)  # Include inclination effect
+
+                "Monitor trajectory refinement",        
+
+                "Prepare local emergency plans",        # Time factors
+
+                "Update early warning systems"        current_year = 2025
+
+            ])        orbital_period = a ** 1.5  # Kepler's Third Law
+
+        next_approach = current_year + orbital_period
+
+        # Compile complete risk assessment        time_till_impact = next_approach - current_year
+
+        return {        
+
+            "physical_characteristics": {        # Calculate risk scales
+
+                "diameter_meters": diameter,        torino = self.calculate_torino_scale(energy_mt, orbital_probability)
+
+                "impact_energy_megatons": energy_mt,        palermo = self.calculate_palermo_scale(energy_mt, orbital_probability, time_till_impact)
+
+                "estimated_mass_kg": (4/3) * np.pi * ((diameter/2)**3) * self.rho        
+
+            },        # Calculate detailed impact effects
+
+            "orbital_parameters": {        impact_effects = self.calculate_impact_effects(energy_mt)
+
+                "eccentricity": e,        
+
+                "semi_major_axis_au": a,        # Define risk zones based on impact effects
+
+                "inclination_deg": i,        risk_zones = {
+
+                "orbital_period_years": orbital_period,            "immediate_destruction": {
+
+                "minimum_orbit_intersection_distance_au": moid                "radius_km": impact_effects["destruction_radius_km"],
+
+            },                "description": "Complete devastation, no survival likely",
+
+            "risk_assessment": {                "population_density": 300,  # assumed average density per km²
+
+                "impact_probability": orbital_probability,            },
+
+                "torino_scale": torino,            "severe_damage": {
+
+                "palermo_scale": palermo,                "radius_km": impact_effects["blast_effects"]["severe_damage_radius_km"],
+
+                "threat_level": "Severe" if torino >= 8 else "High" if torino >= 5 else "Moderate" if torino >= 2 else "Low",                "description": "Severe structural damage, high casualty rate",
+
+                "confidence_level": "High" if orbital_probability > 1e-6 else "Medium" if orbital_probability > 1e-8 else "Low"                "infrastructure_damage": "90-100%"
+
+            },            },
+
+            "impact_effects": impact_effects,            "moderate_damage": {
+
+            "risk_zones": risk_zones,                "radius_km": impact_effects["blast_effects"]["building_damage_radius_km"],
+
+            "casualty_estimate": casualty_estimate,                "description": "Significant building damage, moderate casualties",
+
+            "infrastructure_impact": infrastructure_impact,                "infrastructure_damage": "50-75%"
+
+            "temporal_assessment": {            },
+
+                "current_year": current_year,            "light_damage": {
+
+                "next_approach_year": next_approach,                "radius_km": impact_effects["blast_effects"]["glass_breaking_radius_km"],
+
+                "years_until_impact": time_till_impact,                "description": "Window breakage, minor injuries possible",
+
+                "observation_urgency": "CRITICAL" if torino >= 8 else "HIGH" if torino >= 3 else "MEDIUM" if torino >= 1 else "LOW",                "infrastructure_damage": "10-25%"
+
+                "observation_priority": 1 if torino >= 8 else 2 if torino >= 3 else 3 if torino >= 1 else 4            }
+
+            },        }
+
+            "mitigation_assessment": {        
+
+                "difficulty": "EXTREME" if energy_mt > 10000 else "HIGH" if energy_mt > 1000 else "MEDIUM" if energy_mt > 100 else "LOW",        # Calculate casualty estimates
+
+                "response_time_needed_years": max(2, np.log10(energy_mt)),        casualty_estimate = self.estimate_casualties(impact_effects)
+
+                "response_window_adequate": time_till_impact > max(2, np.log10(energy_mt)),        
+
+                "mitigation_strategies": mitigation_strategies,        # Infrastructure impact assessment
+
+                "success_probability": max(0.1, min(0.9, 1 - (orbital_probability * np.log10(energy_mt + 1))))        infrastructure_impact = {
+
+            }            "power_grid": {
+
+        }                "severity": "Severe" if energy_mt > 100 else "Moderate" if energy_mt > 10 else "Light",
+                "radius_km": impact_effects["blast_effects"]["severe_damage_radius_km"] * 1.5,
+                "recovery_time_days": int(30 * np.log10(energy_mt + 1))
+            },
+            "communications": {
+                "severity": "Severe" if energy_mt > 50 else "Moderate" if energy_mt > 5 else "Light",
+                "radius_km": impact_effects["blast_effects"]["severe_damage_radius_km"] * 2,
+                "recovery_time_days": int(20 * np.log10(energy_mt + 1))
+            },
+            "transportation": {
+                "severity": "Severe" if energy_mt > 200 else "Moderate" if energy_mt > 20 else "Light",
+                "radius_km": impact_effects["blast_effects"]["severe_damage_radius_km"] * 1.2,
+                "recovery_time_days": int(45 * np.log10(energy_mt + 1))
+            }
+        }
+
+        # Generate mitigation strategies
+        mitigation_strategies = []
+        if energy_mt > 1000:
+            mitigation_strategies.extend([
+                "Deploy nuclear deflection mission",
+                "Prepare global evacuation plans",
+                "Activate emergency response networks"
+            ])
+        elif energy_mt > 100:
+            mitigation_strategies.extend([
+                "Deploy kinetic impact mission",
+                "Prepare regional evacuation plans",
+                "Establish emergency response centers"
+            ])
+        else:
+            mitigation_strategies.extend([
+                "Monitor trajectory refinement",
+                "Prepare local emergency plans",
+                "Update early warning systems"
+            ])
+        
+        # Enhanced impact probability calculation including inclination
+        base_probability = 1e-6 * (1 + abs(1 - a)) * (1 + e)
+        inclination_factor = np.exp(-i / 30)  # reduces probability for high inclination orbits
+        impact_probability = max(1e-10, min(1e-3, base_probability * inclination_factor))
+        
+        # Calculate impact energy
+        energy_mt = self.calculate_impact_energy(diameter)
+        
+        # Calculate detailed effects
+        impact_effects = self.calculate_impact_effects(energy_mt)
+        
+        # Estimate casualties (using global average population density)
+        casualty_estimate = self.estimate_casualties(impact_effects)
+        
+        # Calculate risk scales
+        torino = self.calculate_torino_scale(energy_mt, impact_probability)
+        palermo = self.calculate_palermo_scale(energy_mt, impact_probability, 50)
+        
+        # Calculate risk zones
+        risk_zones = {
+            "immediate_danger_zone_km": impact_effects["destruction_radius_km"],
+            "evacuation_zone_km": casualty_estimate["evacuation_radius_km"],
+            "monitoring_zone_km": impact_effects["blast_effects"]["glass_breaking_radius_km"]
+        }
+        
+        # Temporal risk assessment
+        orbital_period = 2 * np.pi * np.sqrt((a * 1.496e8) ** 3 / (6.67e-11 * 1.989e30))
+        next_approach = orbital_period / (365.25 * 24 * 3600)  # years
+        
+        return {
+            "impact_probability": impact_probability,
+            "impact_effects": impact_effects,
+            "torino_scale": torino,
+            "palermo_scale": palermo,
+            "casualty_estimate": casualty_estimate,
+            "risk_zones": risk_zones,
+            "temporal_assessment": {
+                "orbital_period_years": next_approach,
+                "next_approach_years": next_approach,
+                "observation_urgency": "HIGH" if torino >= 3 else "MEDIUM" if torino >= 1 else "LOW"
+            },
+            "mitigation_assessment": {
+                "difficulty": "HIGH" if energy_mt > 1000 else "MEDIUM" if energy_mt > 100 else "LOW",
+                "response_time_needed_years": max(2, np.log10(energy_mt)),
+                "recommended_actions": [
+                    "Continuous monitoring" if torino >= 1 else "Regular monitoring",
+                    "Evacuation planning" if torino >= 5 else "Risk assessment",
+                    "Deflection mission planning" if torino >= 7 else "Technology preparation"
+                ]
+            }
+        }

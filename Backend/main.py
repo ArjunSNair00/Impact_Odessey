@@ -294,6 +294,81 @@ def get_asteroids():
         }), 500
 
 
+@app.route('/api/predict-impact', methods=['POST'])
+def predict_impact():
+    """Calculate impact predictions for an asteroid based on provided parameters"""
+    try:
+        parameters = request.get_json()
+        if not parameters:
+            return jsonify({
+                'success': False,
+                'error': 'No parameters provided'
+            }), 400
+
+        # Create asteroid data structure expected by risk calculator
+        diameter = parameters.get('diameter', 100)  # meters
+        velocity = parameters.get('velocity', 20)  # km/s
+        angle = parameters.get('angle', 45)  # degrees
+        mass = parameters.get('mass', 1000000)  # kg
+        composition = parameters.get('composition', 'iron')
+
+        # Calculate impact velocity components
+        velocity_ms = velocity * 1000  # convert km/s to m/s
+        
+        # Density based on composition
+        density = {
+            'iron': 7800,  # kg/m³
+            'rock': 3000,  # kg/m³
+            'ice': 920,    # kg/m³
+        }.get(composition, 3000)
+
+        asteroid_data = {
+            'estimated_diameter_min': diameter,
+            'estimated_diameter_max': diameter,
+            'orbital_elements': {
+                'eccentricity': 0.1,  # Assumed for direct impact scenario
+                'semi_major_axis': 1.5,  # AU
+                'inclination': angle
+            },
+            'close_approach_data': [{
+                'relative_velocity': {'kilometers_per_second': velocity},
+                'miss_distance': {'kilometers': 0},  # Direct impact scenario
+                'orbiting_body': 'Earth'
+            }],
+            'is_potentially_hazardous': True,
+            'estimated_mass': mass,
+            'density': density
+        }
+
+        # Calculate risk assessment
+        assessment = risk_calc.assess_risk(asteroid_data)
+        # Return both a compact prediction object and the full assessment for the frontend
+        return jsonify({
+            'success': True,
+            'prediction': {
+                'impactProbability': assessment['risk_assessment']['impact_probability'],
+                'energyMegatons': assessment.get('impact_energy_megatons', assessment.get('impact_energy_megatons', 0)),
+                'torinoScale': assessment['risk_assessment']['torino_scale'],
+                'threatLevel': assessment['risk_assessment']['threat_level'],
+                'impactEffects': {
+                    'craterDiameter': assessment['impact_effects'].get('crater_diameter_km'),
+                    'craterDepth': assessment['impact_effects'].get('crater_depth_km'),
+                    'destructionRadius': assessment['impact_effects'].get('destruction_radius_km'),
+                    'fireballRadius': assessment['impact_effects'].get('fireball_radius_km')
+                },
+                'casualties': assessment.get('casualty_estimate', {}),
+                'riskZones': assessment.get('risk_zones', {})
+            },
+            'assessment': assessment
+        })
+
+    except Exception as e:
+        logger.error(f"Error calculating impact prediction: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to calculate impact prediction'
+        }), 500
+
 @app.route('/api/impact-summary', methods=['GET'])
 def impact_summary():
     """Fetch asteroids from NASA and produce risk summaries and Plotly-ready data."""
