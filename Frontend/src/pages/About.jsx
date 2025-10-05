@@ -4,9 +4,40 @@ import { motion } from "framer-motion";
 function About() {
   const teamMembers = [
     {
-      name: "Your Name",
-      role: "Project Lead",
-      description: "Oversaw project development and coordinated team efforts",
+      name: "Arjun S Nair",
+      role: "Project Lead, Frontend & Backend Developer",
+      description:
+        "Led the project development, integrating Three.js 3D simulations with a React frontend and Flask backend.",
+    },
+    {
+      name: "Malavika R",
+      role: "UI/UX Designer",
+      description:
+        "Designed high-fidelity Figma prototypes and contributed to the overall user experience design.",
+    },
+    {
+      name: "Hridya Hari",
+      role: "UI/UX Designer",
+      description:
+        "Created detailed UI/UX wireframes and collaborated on interface design improvements.",
+    },
+    {
+      name: "Vishnumaya G N",
+      role: "UI/UX Designer",
+      description:
+        "Contributed to Figma prototyping and assisted in refining the user interface and experience.",
+    },
+    {
+      name: "M R Nandana",
+      role: "Frontend Developer",
+      description:
+        "Developed and optimized React components, ensuring responsive and reusable UI elements.",
+    },
+    {
+      name: "Muhammed Raihan",
+      role: "Backend Developer, Data Science & ML",
+      description:
+        "Worked on backend logic, data processing, and machine learning integrations.",
     },
     // Add other team members here
   ];
@@ -92,15 +123,16 @@ function About() {
                 <li>Python</li>
                 <li>Flask</li>
                 <li>NumPy</li>
-                <li>SciPy</li>
+                <li>Pandas</li>
+                <li>Scikit-Learn</li>
               </ul>
             </div>
             <div>
               <h3 className="text-xl font-semibold mb-2">Data Sources</h3>
               <ul className="list-disc list-inside">
                 <li>NASA NEO API</li>
-                <li>JPL Small-Body Database</li>
                 <li>USGS Data</li>
+                <li>Nasa Earth Textures</li>
               </ul>
             </div>
           </div>

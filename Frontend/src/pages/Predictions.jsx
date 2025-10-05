@@ -14,13 +14,16 @@ function Predictions() {
     setError(null);
 
     try {
-      const response = await fetch("http://localhost:5000/api/predict-impact", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(parameters),
-      });
+      const response = await fetch(
+        "https://impact-odessey.onrender.com/api/predict-impact",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(parameters),
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`API request failed with status ${response.status}`);
